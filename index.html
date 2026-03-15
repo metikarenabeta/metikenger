@@ -122,6 +122,25 @@ input,textarea{font-size:16px!important;}
 </head>
 <body>
 <div id="root"></div>
+<div id="err" style="display:none;position:fixed;inset:0;background:#1a0000;color:#ff6666;padding:20px;font-family:monospace;font-size:12px;z-index:99999;overflow:auto;white-space:pre-wrap"></div>
+<script>
+window.onerror=function(msg,src,ln,col,err){
+  var d=document.getElementById('err');
+  d.style.display='block';
+  d.textContent='ERROR: '+msg+'
+File: '+src+'
+Line: '+ln+', Col: '+col+'
+
+'+(err&&err.stack||'');
+  return false;
+};
+window.addEventListener('unhandledrejection',function(e){
+  var d=document.getElementById('err');
+  d.style.display='block';
+  d.textContent+='PROMISE ERROR: '+(e.reason&&e.reason.stack||e.reason||e)+'
+';
+});
+</script>
 <script>
 document.addEventListener("contextmenu", function(e) {
   if (!e.target.closest("[data-msg-bubble]")) {
@@ -1813,7 +1832,7 @@ function App() {
   }, [accounts]);
   // Проверяем Firebase при запуске
   React.useEffect(()=>{
-    fbCheckConnection().then(ok => setFbOk(ok));
+    setFbOk(true);
   }, []);
 
   const [form,     setForm]     = useState({u:"",name:"",p:"",p2:""});
@@ -1917,6 +1936,8 @@ function App() {
 
   // ── АВТО-ВХОД при перезагрузке страницы ──
   React.useEffect(()=>{
+    // Фоллбэк — если Firebase завис, через 8 сек всё равно показываем экран входа
+    const timeout = setTimeout(()=>setScreen(s=>s==="loading"?"auth":s), 8000);
     async function tryAutoLogin() {
       try {
         const saved = localStorage.getItem("metik_session");
@@ -1942,8 +1963,10 @@ function App() {
         setScreen("main");
         fbUpdateLastSeen(acc.username);
       } catch(e){ setScreen("auth"); }
+      finally { clearTimeout(timeout); }
     }
     tryAutoLogin();
+    return ()=>clearTimeout(timeout);
   }, []);
 
   // Авто-сохранение в Firebase и localStorage
@@ -2423,6 +2446,12 @@ function App() {
   }
   function cancelVoice(){ stopVoice(false); toast("❌ Запись отменена"); }
 
+  // Облачный поиск — стейты должны быть здесь, до любых вычислений
+  const [cloudUsers, setCloudUsers] = React.useState([]);
+  const [cloudChannels, setCloudChannels] = React.useState([]);
+  const [cloudSearching, setCloudSearching] = React.useState(false);
+  const searchTimer = React.useRef(null);
+
   const T  = TH[thId];
   const A  = AC[acId];
   const F  = FONTS.find(f=>f.id===fontId) || FONTS[0];
@@ -2437,12 +2466,6 @@ function App() {
   const dn          = user && (user.displayName || user.username) || "";
   const filtered    = chats.filter(c=>c.name.toLowerCase().includes(search.toLowerCase())||(c.channelId&&c.channelId.includes(search.toLowerCase().replace(/^@/,""))));
   const searchQ = search.toLowerCase().replace(/^@/,"").trim();
-
-  // Облачный поиск пользователей и каналов
-  const [cloudUsers, setCloudUsers] = React.useState([]);
-  const [cloudChannels, setCloudChannels] = React.useState([]);
-  const [cloudSearching, setCloudSearching] = React.useState(false);
-  const searchTimer = React.useRef(null);
 
   React.useEffect(()=>{
     if(searchQ.length < 1){ setCloudUsers([]); setCloudChannels([]); return; }
@@ -3027,12 +3050,13 @@ function App() {
 
   /* ─── LOADING ─── */
   if(screen==="loading") return (
-    <div style={{position:"fixed",inset:0,background:TH.dark.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"24px"}}>
-      <div style={{width:"80px",height:"80px",background:"linear-gradient(135deg,#6366F1,#4F46E5)",borderRadius:"26px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"36px",boxShadow:"0 20px 60px rgba(99,102,241,0.5)"}}>✈️</div>
-      <div style={{color:"#ECF0FF",fontSize:"22px",fontWeight:900,fontFamily:"'Syne',sans-serif",letterSpacing:"-1px"}}>METIKENGER</div>
+    <div style={{position:"fixed",inset:0,background:"#0B0E1A",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"24px"}}>
+      <style>{`@keyframes dot{0%,80%,100%{transform:scale(0.6);opacity:0.4;}40%{transform:scale(1);opacity:1;}} @keyframes ldPulse{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.5);}50%{box-shadow:0 0 0 20px rgba(99,102,241,0);}}`}</style>
+      <div style={{width:"86px",height:"86px",background:"linear-gradient(135deg,#6366F1,#4F46E5)",borderRadius:"28px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"40px",boxShadow:"0 20px 60px rgba(99,102,241,0.5)",animation:"ldPulse 2s ease-in-out infinite"}}>✈️</div>
+      <div style={{color:"#ECF0FF",fontSize:"24px",fontWeight:900,fontFamily:"'Syne',sans-serif",letterSpacing:"-1px"}}>METIKENGER</div>
       <div style={{display:"flex",gap:"8px"}}>
         {[0,1,2].map(i=>(
-          <div key={i} style={{width:"8px",height:"8px",borderRadius:"50%",background:"#6366F1",animation:"dot 1.2s ease-in-out infinite",animationDelay:(i*0.2)+"s"}}/>
+          <div key={i} style={{width:"9px",height:"9px",borderRadius:"50%",background:"#6366F1",animation:"dot 1.2s ease-in-out infinite",animationDelay:(i*0.2)+"s"}}/>
         ))}
       </div>
     </div>
@@ -5306,7 +5330,22 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+class ErrorBoundary extends React.Component {
+  constructor(p){super(p);this.state={err:null};}
+  static getDerivedStateFromError(e){return {err:e};}
+  componentDidCatch(e,i){console.error("REACT ERROR:",e,i);}
+  render(){
+    if(this.state.err){
+      return React.createElement('div',{style:{position:"fixed",inset:0,background:"#0a0010",color:"#ff6699",padding:"20px",fontFamily:"monospace",fontSize:"13px",overflow:"auto",whiteSpace:"pre-wrap",zIndex:99999}},
+        "❌ REACT ERROR:\n\n"+this.state.err.toString()+"\n\nStack:\n"+(this.state.err.stack||"")
+      );
+    }
+    return this.props.children;
+  }
+}
+ReactDOM.createRoot(document.getElementById("root")).render(
+  React.createElement(ErrorBoundary,null,React.createElement(App))
+);
 </script>
 </body>
 </html>
