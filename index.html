@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="METIKENGER"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
 <meta http-equiv="Referrer-Policy" content="no-referrer"/>
 <title>METIKENGER</title>
@@ -12,6 +13,44 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script>
+// Service Worker через Blob — работает из локального файла
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  const swCode = `
+self.addEventListener('install', e => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+self.addEventListener('push', e => {
+  if(!e.data) return;
+  const d = e.data.json();
+  e.waitUntil(self.registration.showNotification(d.title||'METIKENGER', {
+    body: d.body||'',
+    icon: d.icon||'',
+    badge: d.badge||'',
+    tag: d.tag||'msg',
+    renotify: true,
+    vibrate: [200,100,200],
+    data: d.data||{}
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({type:'window'}).then(cs=>{
+    if(cs.length>0){ cs[0].focus(); return; }
+    clients.openWindow('/');
+  }));
+});
+  `;
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl, {scope: '/'})
+    .then(reg => {
+      window._swReg = reg;
+      console.log('SW registered');
+    })
+    .catch(e => console.log('SW reg failed (file://):', e.message));
+})();
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html{height:100%;height:-webkit-fill-available;}
@@ -27,6 +66,9 @@ button{touch-action:manipulation;}
 input,textarea{font-size:16px!important;}
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spinDrum{0%{transform:translateY(-8px);opacity:0.3;}50%{transform:translateY(0);opacity:1;}100%{transform:translateY(8px);opacity:0.3;}}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 @keyframes scaleIn{from{opacity:0;transform:scale(0.85);}to{opacity:1;transform:scale(1);}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--glow);}50%{box-shadow:0 0 0 22px transparent;}}
@@ -618,14 +660,16 @@ function GiftModal({ T, A, straps, setStraps, balloonCount, appleCount, setGifts
 /* ── PROMO CODE ── */
 // Промокоды — одноразовые, хранятся в localStorage
 const PROMO_CODES = {
-  "CREATOR-1548": { title:"creator", reward:"Титул CREATOR" },
-  "CREATOR-2791": { title:"creator", reward:"Титул CREATOR" },
-  "CREATOR-3864": { title:"creator", reward:"Титул CREATOR" },
-  "OWNER-7731": { title:"owner", reward:"Титул ВЛАДЕЛЕЦ" },
-  "OWNER-4892": { title:"owner", reward:"Титул ВЛАДЕЛЕЦ" },
+  "CREATOR-5217": { title:"creator", reward:"Титул CREATOR" },
+  "CREATOR-9043": { title:"creator", reward:"Титул CREATOR" },
+  "CREATOR-6781": { title:"creator", reward:"Титул CREATOR" },
+  "CREATOR-3302": { title:"creator", reward:"Титул CREATOR" },
+  "OWNER-2156":   { title:"owner",   reward:"Титул ВЛАДЕЛЕЦ" },
+  "OWNER-8834":   { title:"owner",   reward:"Титул ВЛАДЕЛЕЦ" },
+  "UMBRELLA-VIP": { gift:{emoji:"☂️",name:"Зонт",price:67000,type:"umbrella"}, reward:"Подарок ☂️ Зонт (67 000 st)" },
 };
 
-function PromoCode({ T, A, onTitleUnlocked }) {
+function PromoCode({ T, A, onTitleUnlocked, onGiftUnlocked }) {
   const [promoVal, setPromoVal] = React.useState("");
   const [promoState, setPromoState] = React.useState("idle");
   const [rewardMsg, setRewardMsg] = React.useState("");
@@ -635,18 +679,16 @@ function PromoCode({ T, A, onTitleUnlocked }) {
     if(!code) return;
     setPromoState("loading");
     setTimeout(()=>{
-      // Ищем промокод без учёта регистра и пробелов
       const promoKey = Object.keys(PROMO_CODES).find(k=>k.toUpperCase()===code);
       const promo = promoKey ? PROMO_CODES[promoKey] : null;
       if(!promo) { setPromoState("error"); setTimeout(()=>setPromoState("idle"),2500); return; }
-      // Проверяем не использован ли уже
       const used = JSON.parse(localStorage.getItem("metik_used_promos")||"[]");
       if(used.includes(promoKey)) { setPromoState("used"); setTimeout(()=>setPromoState("idle"),2500); return; }
-      // Применяем
       localStorage.setItem("metik_used_promos", JSON.stringify([...used, promoKey]));
       setRewardMsg(promo.reward);
       setPromoState("ok");
-      if(onTitleUnlocked) onTitleUnlocked(promo.title);
+      if(promo.title && onTitleUnlocked) onTitleUnlocked(promo.title);
+      if(promo.gift && onGiftUnlocked) onGiftUnlocked({...promo.gift, id:"umb_"+Date.now(), acquiredAt:Date.now(), burnDeadline:Date.now()+365*24*60*60*1000});
     }, 900);
   }
 
@@ -752,11 +794,14 @@ function GiftDetail({ T, A, giftDetail, setGiftDetail, setGifts, setStraps, toas
 }
 
 /* ── USER PROFILE MODAL ── */
-function UserProfileModal({ T, A, viewProfile, setViewProfile, lang }) {
+function UserProfileModal({ T, A, viewProfile, setViewProfile, lang, lastSeenCache }) {
   const t = k => (I18N[lang]||I18N.ru)[k] || k;
   if (!viewProfile) return null;
   const u = viewProfile;
   const uc = u.color || A.main;
+  const ls = lastSeenCache?.[u.username] || 0;
+  const online = isOnline(ls);
+  const statusLabel = u.isAIProfile ? "ИИ-ассистент" : onlineLabel(ls);
   return (
     <div style={{
       position:"fixed",inset:0,zIndex:5000,
@@ -811,10 +856,10 @@ function UserProfileModal({ T, A, viewProfile, setViewProfile, lang }) {
             {u.prem&&(
               <span style={{background:"linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))",color:A.main,fontSize:"10px",fontWeight:800,padding:"5px 12px",borderRadius:"20px",border:"1px solid "+A.main+"44"}}>✦ PRO</span>
             )}
-            <span style={{background:"#22C55E10",color:"#22C55E",border:"1px solid #22C55E22",borderRadius:"20px",padding:"4px 14px",fontSize:"12px",fontWeight:700,display:"flex",alignItems:"center",gap:"5px"}}>
-              <span style={{width:"7px",height:"7px",borderRadius:"50%",background:"#22C55E",display:"inline-block",animation:"ringPulse 2s infinite"}}/>
-              {u.isAIProfile?"ИИ-ассистент":t("onlineStatus")}
-            </span>
+            <span style={{background:online?"#22C55E10":"rgba(120,120,120,0.1)",color:online?"#22C55E":"#94A3B8",border:"1px solid "+(online?"#22C55E22":"rgba(120,120,120,0.2)"),borderRadius:"20px",padding:"4px 14px",fontSize:"12px",fontWeight:700,display:"flex",alignItems:"center",gap:"5px"}}>
+                <span style={{width:"7px",height:"7px",borderRadius:"50%",background:online?"#22C55E":"#94A3B8",display:"inline-block",animation:online?"ringPulse 2s infinite":"none"}}/>
+                {statusLabel}
+              </span>
           </div>
         </div>
 
@@ -897,6 +942,9 @@ function CreateChannelModal({ T, A, setCreateChannel, setChats, toast, lang }) {
     setChats(c=>[nc,...c]);
     setCreateChannel(false);
     toast("✅ Канал @"+cleanId+" создан!");
+    // Публикуем канал в облако (аватарку сжимаем если большая)
+    const pubAvImg = nc.avatarImg && nc.avatarImg.length < 50000 ? nc.avatarImg : null;
+    fbSet("/channels/"+cleanId, {id:String(nc.id), name:nc.name, channelId:cleanId, desc:nc.desc, avatar:nc.avatar, avatarImg:pubAvImg, color:nc.color});
   }
   return (
     <div className="mo" onClick={()=>setCreateChannel(false)}>
@@ -1171,7 +1219,7 @@ const I18N = {
     userPlaceholder:"только a-z, 0-9, _", pwPlaceholderReg:"min. 6 chars, a-z / 0-9", pwPlaceholderLog:"Ваш пароль",
     doRegister:"Зарегистрироваться →", doLogin:"Войти →",
     localData:"METIKENGER · Данные хранятся в облаке",
-    chats:"METIKENGER", profile:"Профиль", gifts:"Подарки", settings:"Настройки", premium:"Premium",
+    chats:"METIKENGER", profile:"Профиль", gifts:"Магазин", settings:"Настройки", premium:"Premium",
     online:"онлайн", protected:"🔒 защищён", aiAssistant:"ИИ-ассистент", typing:"Печатает...",
     yourChannel:"Ваш канал", channel:"Канал", readOnly:"📢 Только чтение",
     search:"Поиск...", noChats:"Чаты не найдены",
@@ -1290,7 +1338,7 @@ const I18N = {
     userPlaceholder:"a-z, 0-9, _ only", pwPlaceholderReg:"min. 6 chars, a-z / 0-9", pwPlaceholderLog:"Your password",
     doRegister:"Create account →", doLogin:"Sign in →",
     localData:"METIKENGER v2.0 · Data stored locally",
-    chats:"METIKENGER", profile:"Profile", gifts:"Gifts", settings:"Settings", premium:"Premium",
+    chats:"METIKENGER", profile:"Profile", gifts:"Shop", settings:"Settings", premium:"Premium",
     online:"online", protected:"🔒 secure", aiAssistant:"AI assistant", typing:"Typing...",
     yourChannel:"Your channel", channel:"Channel", readOnly:"📢 Read only",
     search:"Search...", noChats:"No chats found",
@@ -1652,9 +1700,47 @@ async function fbPatch(path, data) {
   } catch(e){}
 }
 
-// Проверка соединения с Firebase
-async function fbCheckConnection() {
-  return true; // Всегда считаем что соединение есть
+async function fbUpdateLastSeen(username) {
+  try { await fbSet("/presence/"+username, {online:true, lastSeen:Date.now()}); } catch(e){}
+}
+
+async function fbGetLastSeen(username) {
+  try {
+    const d = await fbGet("/presence/"+username);
+    if(!d) return {online:false, lastSeen:0};
+    return d;
+  } catch(e){ return {online:false, lastSeen:0}; }
+}
+
+function isOnline(presence) {
+  if(!presence) return false;
+  // Если есть явный флаг — используем его
+  if(typeof presence === "object") {
+    if(!presence.online) return false;
+    // Дополнительно проверяем что heartbeat свежий (< 2 мин)
+    return (Date.now() - (presence.lastSeen||0)) < 2 * 60 * 1000;
+  }
+  // Fallback: старый формат (просто число)
+  return (Date.now() - presence) < 3 * 60 * 1000;
+}
+
+function onlineLabel(presence) {
+  if(!presence) return "не в сети";
+  // Новый формат — объект {online, lastSeen}
+  if(typeof presence === "object") {
+    if(presence.online && (Date.now()-(presence.lastSeen||0)) < 2*60*1000) return "в сети";
+    const diff = Date.now() - (presence.lastSeen||0);
+    if(!presence.lastSeen) return "не в сети";
+    if(diff < 60*60*1000){ const m=Math.floor(diff/60000); return "был(а) "+(m<1?"только что":m+" мин. назад"); }
+    if(diff < 24*60*60*1000){ const h=Math.floor(diff/3600000); return "был(а) "+h+" ч. назад"; }
+    return "не в сети";
+  }
+  // Старый формат — число
+  const diff = Date.now() - presence;
+  if(diff < 3*60*1000) return "в сети";
+  if(diff < 60*60*1000){ const m=Math.floor(diff/60000); return "был(а) "+m+" мин. назад"; }
+  if(diff < 24*60*60*1000){ const h=Math.floor(diff/3600000); return "был(а) "+h+" ч. назад"; }
+  return "не в сети";
 }
 
 async function cloudGetUsers() {
@@ -1679,9 +1765,17 @@ async function fbGetAccount(username) {
 async function fbSaveChats(username, chats) {
   const slim = chats.map(c => ({
     ...c,
+    // Не сохраняем большие base64 в чатах — только ссылки
+    avatarImg: c.avatarImg && c.avatarImg.length > 50000 ? null : c.avatarImg,
     messages: (c.messages||[]).slice(-50)
   }));
   await fbSet("/chats/" + username, slim);
+  // Обновляем свои каналы в реестре каналов
+  const ownedChannels = chats.filter(c=>c.isChannel && c.isOwned && c.channelId);
+  for(const ch of ownedChannels) {
+    const pubAvImg = ch.avatarImg && ch.avatarImg.length < 50000 ? ch.avatarImg : null;
+    await fbSet("/channels/"+ch.channelId, {id:String(ch.id), name:ch.name, channelId:ch.channelId, desc:ch.desc||"", avatar:ch.avatar, avatarImg:pubAvImg, color:ch.color});
+  }
 }
 
 async function fbGetChats(username) {
@@ -1695,45 +1789,24 @@ async function fbGetChats(username) {
 // Отправить сообщение получателю
 async function fbDeliverMessage(toUsername, fromUsername, fromDisplayName, fromAvatar, fromColor, fromAvatarImg, chatId, msg) {
   try {
-    const recipientChats = await fbGetChats(toUsername) || [];
-    const existingIdx = recipientChats.findIndex(c =>
-      !c.isAI && !c.isChannel && !c.isGroup &&
-      (c.username === fromUsername || c.name === fromDisplayName)
-    );
-    const incomingMsg = {...msg, from:"them"};
-    if(existingIdx >= 0) {
-      recipientChats[existingIdx] = {
-        ...recipientChats[existingIdx],
-        lastMsg: msg.text||"📎", time:"сейчас",
-        unread: (recipientChats[existingIdx].unread||0)+1,
-        messages: [...(recipientChats[existingIdx].messages||[]), incomingMsg].slice(-50)
-      };
-    } else {
-      recipientChats.unshift({
-        id: chatId,
-        name: fromDisplayName,
-        username: fromUsername,
-        avatar: fromAvatar,
-        avatarImg: fromAvatarImg||null,
-        color: fromColor,
-        lastMsg: msg.text||"📎", time:"сейчас",
-        unread:1,
-        messages:[incomingMsg],
-        isChannel:false, isGroup:false, isAI:false,
-      });
-    }
-    await fbSaveChats(toUsername, recipientChats);
-  } catch(e){}
+    // Записываем сообщение напрямую в inbox получателя — не трогаем его чаты целиком
+    const msgId = msg.id || Date.now();
+    await fbSet("/inbox/" + toUsername + "/" + msgId, {
+      chatId, fromUsername, fromDisplayName, fromAvatar, fromColor, fromAvatarImg,
+      msg: msg
+    });
+  } catch(e){ console.error("fbDeliverMessage error:", e); }
 }
 
 function App() {
-  const [screen,   setScreen]   = useState("auth");
+  const [screen,   setScreen]   = useState("loading");
   const [authMode, setAuthMode] = useState("choice");
+  const [authLoading, setAuthLoading] = useState(false);
   const [accounts, setAccounts] = useState(()=>{
     try { return JSON.parse(localStorage.getItem("metik_accounts")||"[]"); } catch(e){ return []; }
   });
   const [user,     setUser]     = useState(null);
-  const [fbOk,     setFbOk]     = useState(true); // Firebase connection status
+  const [fbOk,     setFbOk]     = useState(true);
   // Авто-сохранение аккаунтов при каждом изменении
   React.useEffect(()=>{
     try { localStorage.setItem("metik_accounts", JSON.stringify(accounts)); } catch(e){}
@@ -1742,7 +1815,8 @@ function App() {
   React.useEffect(()=>{
     fbCheckConnection().then(ok => setFbOk(ok));
   }, []);
-  const [form,     setForm]     = useState({u:"",p:""});
+
+  const [form,     setForm]     = useState({u:"",name:"",p:"",p2:""});
   const [ferr,     setFerr]     = useState("");
 
   const [tab,    setTab]    = useState("chats");
@@ -1823,63 +1897,373 @@ function App() {
   const [totalBoughtBalloon, setTotalBoughtBalloon] = useState(0);
   const [totalBoughtApple,   setTotalBoughtApple]   = useState(0);
   const [giftDetail,setGiftDetail]= useState(null);
+  const [rouletteSpinning, setRouletteSpinning] = useState(false);
+  const [rouletteResult,   setRouletteResult]   = useState(null);
+  const [drumIdx,          setDrumIdx]          = useState(0);
+
+  // ── ЗВОНКИ (WebRTC) ──
+  const [callState,    setCallState]    = useState(null); // null | "calling" | "incoming" | "active"
+  const [callWith,     setCallWith]     = useState(null); // {username, displayName, avatar, color}
+  const [callTimer,    setCallTimer]    = useState(0);
+  const [callMuted,    setCallMuted]    = useState(false);
+  const [callSpeaker,  setCallSpeaker]  = useState(true);
+  const pcRef          = useRef(null);
+  const localStreamRef = useRef(null);
+  const remoteAudioRef = useRef(null);
+  const callTimerRef   = useRef(null);
+  const callRoomRef    = useRef(null);
   const [unlockedTitles, setUnlockedTitles] = useState([]);
   const [activeTitle, setActiveTitle] = useState("");
 
+  // ── АВТО-ВХОД при перезагрузке страницы ──
+  React.useEffect(()=>{
+    async function tryAutoLogin() {
+      try {
+        const saved = localStorage.getItem("metik_session");
+        if(!saved){ setScreen("auth"); return; }
+        const {username} = JSON.parse(saved);
+        if(!username){ setScreen("auth"); return; }
+        let acc = await fbGetAccount(username);
+        if(!acc) acc = accounts.find(a=>a.username===username);
+        if(!acc){ setScreen("auth"); return; }
+        const savedChats = await fbGetChats(username);
+        setStraps(acc.straps||0);
+        setUnlockedTitles(acc.unlockedTitles||[]);
+        setActiveTitle(acc.activeTitle||"");
+        setGifts(acc.gifts||[]);
+        setPrem(acc.prem||false);
+        const loadedChats2 = (savedChats && savedChats.length>0) ? savedChats : (acc.savedChats&&acc.savedChats.length>0 ? acc.savedChats : []);
+        if(loadedChats2.length > 0) {
+          const savedIds2 = new Set(loadedChats2.map(c=>String(c.id)));
+          const systemOnly2 = INIT_CHATS.filter(ic=>!savedIds2.has(String(ic.id)));
+          setChats([...loadedChats2, ...systemOnly2]);
+        }
+        setUser(acc);
+        setScreen("main");
+        fbUpdateLastSeen(acc.username);
+      } catch(e){ setScreen("auth"); }
+    }
+    tryAutoLogin();
+  }, []);
+
   // Авто-сохранение в Firebase и localStorage
+  // Барабан рулетки
+  React.useEffect(()=>{
+    if(!rouletteSpinning){ setDrumIdx(0); return; }
+    const iv = setInterval(()=>setDrumIdx(i=>(i+1)%15),100);
+    return ()=>clearInterval(iv);
+  },[rouletteSpinning]);
+
+  // ── WebRTC ЗВОНКИ ──
+  const ICE_SERVERS = {iceServers:[
+    {urls:"stun:stun.l.google.com:19302"},
+    {urls:"stun:stun1.l.google.com:19302"},
+    {urls:"stun:stun2.l.google.com:19302"},
+    {urls:"stun:stun.relay.metered.ca:80"},
+    {urls:"turn:global.relay.metered.ca:80",    username:"83b99e49e623ccab5b5e",credential:"m6OqZZ6x6KkHpFYZ"},
+    {urls:"turn:global.relay.metered.ca:80?transport=tcp", username:"83b99e49e623ccab5b5e",credential:"m6OqZZ6x6KkHpFYZ"},
+    {urls:"turn:global.relay.metered.ca:443",   username:"83b99e49e623ccab5b5e",credential:"m6OqZZ6x6KkHpFYZ"},
+    {urls:"turns:global.relay.metered.ca:443?transport=tcp",username:"83b99e49e623ccab5b5e",credential:"m6OqZZ6x6KkHpFYZ"},
+  ]};
+
+  async function startCall(acc) {
+    if(callState) return;
+    if(!acc.username){ toast("❌ Нельзя позвонить без имени пользователя"); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      localStreamRef.current = stream;
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pcRef.current = pc;
+      stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+      pc.ontrack = e=>{ if(remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0]; };
+      pc.onconnectionstatechange = ()=>{
+        if(pc.connectionState==="disconnected"||pc.connectionState==="failed"||pc.connectionState==="closed"){
+          endCall();
+        }
+      };
+      const roomId = [user.username, acc.username].sort().join("_");
+      callRoomRef.current = roomId;
+      // Слушаем ICE кандидатов
+      pc.onicecandidate = e=>{
+        if(e.candidate) fbSet("/calls/"+roomId+"/offer_ice/"+Date.now(), e.candidate.toJSON());
+      };
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await fbSet("/calls/"+roomId, {
+        caller: user.username, callerName: user.displayName||user.username,
+        callerAvatar: user.avatar, callerColor: user.color||"#6366F1",
+        callee: acc.username, status:"calling",
+        offer: {type:offer.type, sdp:offer.sdp}, createdAt: Date.now()
+      });
+      setCallWith(acc);
+      setCallState("calling");
+      setCallTimer(0);
+      // Таймаут 30 сек если не ответили
+      setTimeout(()=>{
+        setCallState(s=>{ if(s==="calling"){ endCall(roomId); return null; } return s; });
+      },30000);
+      // Polling ответа
+      const pollAnswer = setInterval(async()=>{
+        const room = await fbGet("/calls/"+roomId);
+        if(!room) { clearInterval(pollAnswer); return; }
+        if(room.status==="accepted" && room.answer) {
+          clearInterval(pollAnswer);
+          const ans = new RTCSessionDescription(room.answer);
+          await pc.setRemoteDescription(ans);
+          // Получаем ICE кандидатов от callee
+          const icePoll = setInterval(async()=>{
+            const ices = await fbGet("/calls/"+roomId+"/answer_ice");
+            if(ices) Object.values(ices).forEach(c=>{ try{ pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){} });
+          },1000);
+          setCallState("active");
+          startCallTimer();
+          setTimeout(()=>clearInterval(icePoll),30000);
+        }
+        if(room.status==="rejected"||room.status==="ended") {
+          clearInterval(pollAnswer); endCall(roomId);
+        }
+      },1500);
+    } catch(e){ toast("❌ Нет доступа к микрофону"); cleanupCall(); }
+  }
+
+  async function answerCall(roomId, callerInfo) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      localStreamRef.current = stream;
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pcRef.current = pc;
+      stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+      pc.ontrack = e=>{ if(remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0]; };
+      pc.onconnectionstatechange = ()=>{
+        if(pc.connectionState==="disconnected"||pc.connectionState==="failed"||pc.connectionState==="closed"){
+          endCall();
+        }
+      };
+      callRoomRef.current = roomId;
+      pc.onicecandidate = e=>{
+        if(e.candidate) fbSet("/calls/"+roomId+"/answer_ice/"+Date.now(), e.candidate.toJSON());
+      };
+      const room = await fbGet("/calls/"+roomId);
+      await pc.setRemoteDescription(new RTCSessionDescription(room.offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await fbSet("/calls/"+roomId+"/answer", {type:answer.type, sdp:answer.sdp});
+      await fbSet("/calls/"+roomId+"/status", "accepted");
+      // Получаем ICE от caller
+      const icePoll = setInterval(async()=>{
+        const ices = await fbGet("/calls/"+roomId+"/offer_ice");
+        if(ices) Object.values(ices).forEach(c=>{ try{ pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){} });
+      },1000);
+      setCallState("active");
+      setCallWith(callerInfo);
+      startCallTimer();
+      setTimeout(()=>clearInterval(icePoll),30000);
+    } catch(e){ toast("❌ Ошибка при ответе на звонок"); cleanupCall(); }
+  }
+
+  function startCallTimer() {
+    setCallTimer(0);
+    clearInterval(callTimerRef.current);
+    callTimerRef.current = setInterval(()=>setCallTimer(t=>t+1), 1000);
+  }
+
+  function endCall(roomId) {
+    const rid = roomId || callRoomRef.current;
+    if(rid) { fbSet("/calls/"+rid+"/status","ended"); setTimeout(()=>fbSet("/calls/"+rid,null),5000); }
+    cleanupCall();
+  }
+
+  function cleanupCall() {
+    clearInterval(callTimerRef.current);
+    if(pcRef.current){ try{pcRef.current.close();}catch(e){} pcRef.current=null; }
+    if(localStreamRef.current){ localStreamRef.current.getTracks().forEach(t=>t.stop()); localStreamRef.current=null; }
+    if(remoteAudioRef.current) remoteAudioRef.current.srcObject=null;
+    setCallState(null); setCallWith(null); setCallTimer(0); setCallMuted(false);
+  }
+
+  function toggleMute() {
+    if(localStreamRef.current){
+      const en = !callMuted;
+      localStreamRef.current.getAudioTracks().forEach(t=>t.enabled=!en);
+      setCallMuted(en);
+    }
+  }
+
+  function fmtCallTime(s){ const m=Math.floor(s/60); return (m<10?"0"+m:m)+":"+(s%60<10?"0"+(s%60):s%60); }
+
+  // Polling входящих звонков
+  React.useEffect(()=>{
+    if(!user) return;
+    const iv = setInterval(async()=>{
+      if(callState) return;
+      try {
+        const allCalls = await fbGet("/calls");
+        if(!allCalls) return;
+        for(const [roomId, room] of Object.entries(allCalls)){
+          if(room.callee===user.username && room.status==="calling" && (Date.now()-room.createdAt)<30000){
+            setCallState("incoming");
+            setCallWith({username:room.caller, displayName:room.callerName, avatar:room.callerAvatar, color:room.callerColor});
+            callRoomRef.current = roomId;
+            return;
+          }
+        }
+      } catch(e){}
+    },2000);
+    return ()=>clearInterval(iv);
+  },[user, callState]);
+
+  // Присутствие — ставим online:true при входе, online:false при закрытии
+  React.useEffect(()=>{
+    if(!user) return;
+    // Ставим онлайн
+    fbSet("/presence/"+user.username, {online:true, lastSeen:Date.now()});
+    // Heartbeat каждые 30 сек
+    const iv = setInterval(()=>{
+      fbSet("/presence/"+user.username, {online:true, lastSeen:Date.now()});
+    }, 30000);
+    // Ставим оффлайн при закрытии вкладки
+    const goOffline = ()=>{ navigator.sendBeacon && navigator.sendBeacon(FIREBASE_URL+"/presence/"+user.username+".json", JSON.stringify({online:false, lastSeen:Date.now()})); };
+    window.addEventListener("beforeunload", goOffline);
+    // Обновляем при активности
+    const onActivity = ()=>fbSet("/presence/"+user.username, {online:true, lastSeen:Date.now()});
+    window.addEventListener("click", onActivity);
+    window.addEventListener("keydown", onActivity);
+    return ()=>{
+      clearInterval(iv);
+      window.removeEventListener("beforeunload", goOffline);
+      window.removeEventListener("click", onActivity);
+      window.removeEventListener("keydown", onActivity);
+      // Ставим оффлайн при размонтировании (выход)
+      fbSet("/presence/"+user.username, {online:false, lastSeen:Date.now()});
+    };
+  },[user]);
+
+  // Кэш lastSeen для отображения в профилях
+  const [lastSeenCache, setLastSeenCache] = React.useState({});
+
   const _savingUser = React.useRef(null);
   const _savingChats = React.useRef(null);
   const _saveTimer = React.useRef(null);
   React.useEffect(()=>{ _savingUser.current = user; }, [user]);
   React.useEffect(()=>{ _savingChats.current = chats; }, [chats]);
 
-  // Polling: подтягиваем входящие сообщения из Firebase каждые 3 сек
+  // Polling: читаем inbox из Firebase каждую секунду
   React.useEffect(()=>{
     if(!user) return;
+
+  // Запрашиваем разрешение на уведомления при первом входе
+  if(typeof Notification !== "undefined" && Notification.permission === "default") {
+    Notification.requestPermission().then(perm => {
+      if(perm === "granted") toast("🔔 Уведомления включены!");
+    });
+  }
+
+  // Хелпер для отправки уведомления — работает и на iOS Safari через SW
+  function sendPushNotification(title, body, tag) {
+    if(typeof Notification === "undefined") return;
+    if(Notification.permission !== "granted") return;
+    const icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%236366F1'/%3E%3Ctext y='48' x='8' font-size='48'%3E%E2%9C%88%EF%B8%8F%3C/text%3E%3C/svg%3E";
+    // iOS Safari 16.4+ — через Service Worker
+    if(window._swReg && window._swReg.showNotification) {
+      window._swReg.showNotification(title, {body, icon, tag, renotify:true, vibrate:[200,100,200]})
+        .catch(()=>{});
+      return;
+    }
+    // Фоллбэк — обычный Notification (Android, Desktop)
+    try { new Notification(title, {body, icon, tag, silent:false}); } catch(e){}
+  }
+
+    let processing = false;
     const interval = setInterval(async ()=>{
+      if(processing) return;
+      processing = true;
       try {
-        const savedChats = await fbGetChats(user.username);
-        if(!savedChats || savedChats.length === 0) return;
+        const inbox = await fbGet("/inbox/" + user.username);
+        if(!inbox) { processing = false; return; }
+        const items = Object.entries(inbox);
+        if(items.length === 0) { processing = false; return; }
+        // Сразу очищаем inbox
+        await fbSet("/inbox/" + user.username, null);
+
+        // Push-уведомления для каждого сообщения
+        if(nOn) {
+          for(const [, item] of items) {
+            const {fromDisplayName, msg} = item;
+            if(!msg) continue;
+            const body = msg.fileType==="sticker" ? "Стикер "+msg.text
+              : msg.fileType==="voice" ? "🎙️ Голосовое сообщение"
+              : msg.fileType==="image" ? "📷 Фото"
+              : msg.text || "📎 Файл";
+            sendPushNotification("✈️ METIKENGER", (fromDisplayName||"Кто-то")+": "+body, "metik-"+(fromDisplayName||"msg"));
+          }
+        }
+
         setChats(prev => {
-          let changed = false;
-          const merged = prev.map(c => {
-            const saved = savedChats.find(s => s.id === c.id || (s.username && s.username === c.username));
-            if(!saved) return c;
-            const savedMsgs = saved.messages || [];
-            const prevMsgsIds = new Set(c.messages.map(m=>m.id));
-            const newMsgs = savedMsgs.filter(m => !prevMsgsIds.has(m.id));
-            if(newMsgs.length === 0) return c;
-            changed = true;
-            return {...c, messages:[...c.messages, ...newMsgs].slice(-100), lastMsg:saved.lastMsg||c.lastMsg, unread:saved.unread||c.unread};
-          });
-          const prevIds = new Set(prev.map(c=>c.id));
-          const newChats = savedChats.filter(s => !prevIds.has(s.id) && !s.isAI);
-          if(newChats.length > 0) changed = true;
-          return changed ? [...newChats, ...merged] : prev;
+          let next = [...prev];
+          for(const [, item] of items) {
+            const {chatId, fromUsername, fromDisplayName, fromAvatar, fromColor, fromAvatarImg, msg} = item;
+            if(!msg || !fromUsername) continue;
+            const incomingMsg = {...msg, from:"them"};
+            if(incomingMsg.fileType==="voice" && !incomingMsg.fileData) {
+              incomingMsg.text = "🎙️ Голосовое сообщение";
+            }
+            // Ищем чат ТОЛЬКО по username — не по имени (имена могут совпадать)
+            const existingIdx = next.findIndex(c =>
+              !c.isAI && !c.isChannel && !c.isGroup && c.username === fromUsername
+            );
+            if(existingIdx >= 0) {
+              const c = next[existingIdx];
+              if(c.messages.find(m => String(m.id) === String(incomingMsg.id))) continue;
+              const label = incomingMsg.fileType==="sticker"?"Стикер "+incomingMsg.text : incomingMsg.fileType==="voice"?"🎙️ Голосовое" : incomingMsg.text||"📎";
+              next = [...next];
+              next[existingIdx] = {...c, lastMsg:label, time:"сейчас", unread:(c.unread||0)+1, messages:[...c.messages, incomingMsg].slice(-100)};
+            } else {
+              // Нет дубликатов — проверяем ещё раз по chatId
+              if(next.find(c => String(c.id)===String(chatId) && !c.isAI)) continue;
+              const label = incomingMsg.fileType==="sticker"?"Стикер" : incomingMsg.fileType==="voice"?"🎙️ Голосовое" : incomingMsg.text||"📎";
+              next = [{
+                id: String(chatId), name: fromDisplayName, username: fromUsername,
+                avatar: fromAvatar, avatarImg: fromAvatarImg||null, color: fromColor||"#6366F1",
+                lastMsg: label, time:"сейчас", unread:1,
+                messages:[incomingMsg], isChannel:false, isGroup:false, isAI:false,
+              }, ...next];
+            }
+          }
+          return next;
         });
       } catch(e){}
-    }, 3000);
+      processing = false;
+    }, 1500);
     return ()=>clearInterval(interval);
   }, [user]);
 
+  // Авто-сохранение gifts/straps/prem (без chats чтобы не было цикла)
   React.useEffect(()=>{
     const u = _savingUser.current;
-    const ch = _savingChats.current;
     if(!u) return;
-    // Локальный кэш
-    setAccounts(a => {
-      const updated = a.map(x => x.username===u.username ? {...x, ...u, gifts, straps, unlockedTitles, activeTitle, prem, savedChats: ch} : x);
-      try { localStorage.setItem("metik_accounts", JSON.stringify(updated)); } catch(e){}
-      return updated;
-    });
-    // Firebase с дебаунсом
     clearTimeout(_saveTimer.current);
     _saveTimer.current = setTimeout(()=>{
       const saveAcc = {...u, gifts, straps, unlockedTitles, activeTitle, prem};
       fbSaveAccount(saveAcc);
+      setAccounts(a => {
+        const updated = a.map(x => x.username===u.username ? {...x, ...saveAcc} : x);
+        try { localStorage.setItem("metik_accounts", JSON.stringify(updated)); } catch(e){}
+        return updated;
+      });
+    }, 2000);
+  }, [gifts, straps, prem, unlockedTitles, activeTitle]);
+
+  // Авто-сохранение чатов отдельно с большим дебаунсом
+  const _chatSaveTimer = React.useRef(null);
+  React.useEffect(()=>{
+    const u = _savingUser.current;
+    if(!u) return;
+    clearTimeout(_chatSaveTimer.current);
+    _chatSaveTimer.current = setTimeout(()=>{
+      const ch = _savingChats.current;
       if(ch) fbSaveChats(u.username, ch);
-    }, 3000);
-  }, [gifts, straps, prem, chats]);
+    }, 5000);
+  }, [chats]);
 
   const [viewProfile,  setViewProfile]  = useState(null);
   const [chatInfo,     setChatInfo]     = useState(null);
@@ -1915,31 +2299,69 @@ function App() {
     const file = e.target.files[0];
     if (!file || !chatId) return;
     e.target.value = "";
-    /* Security: file size cap */
-    if(file.size > MAX_FILE_MB * 1024 * 1024){
-      toast(t("fileTooBig")); return;
-    }
+    if(file.size > MAX_FILE_MB * 1024 * 1024){ toast(t("fileTooBig")); return; }
     const isImg = ALLOWED_IMG_TYPES.has(file.type) || file.type.startsWith("image/");
     const reader = new FileReader();
     reader.onload = ev => {
       const timeLocale = lang==="en" ? "en" : "ru";
-      const nm = {
-        id: Date.now(), from:"me",
-        time: new Date().toLocaleTimeString(timeLocale,{hour:"2-digit",minute:"2-digit"}),
-        replyTo: null,
-        ...(isImg
-          ? { text:"", fileType:"image", fileName:file.name, fileData:ev.target.result }
-          : { text:"📎 "+file.name, fileType:"file",  fileName:file.name, fileSize: Math.round(file.size/1024)+"KB", fileData:ev.target.result }
-        )
+      const rawData = ev.target.result;
+
+      const buildAndSend = (fileData) => {
+        const nm = {
+          id: Date.now(), from:"me",
+          time: new Date().toLocaleTimeString(timeLocale,{hour:"2-digit",minute:"2-digit"}),
+          replyTo: null,
+          ...(isImg
+            ? { text:"", fileType:"image", fileName:file.name, fileData }
+            : { text:"📎 "+file.name, fileType:"file", fileName:file.name, fileSize: Math.round(file.size/1024)+"KB", fileData }
+          )
+        };
+        setChats(c=>c.map(x=>String(x.id)===String(chatId)
+          ? {...x, lastMsg: isImg?t("photoLabel"):"📎 "+file.name, time:t("nowTime"), messages:[...x.messages,nm]}
+          : x
+        ));
+        toast(isImg?t("photoSent"):t("fileSent"));
+        const ac = chats.find(c=>String(c.id)===String(chatId));
+        if(ac) deliverToRecipient(ac, nm);
       };
-      setChats(c=>c.map(x=>x.id===chatId
-        ? {...x, lastMsg: isImg?t("photoLabel"):"📎 "+file.name, time:t("nowTime"), messages:[...x.messages,nm]}
-        : x
-      ));
-      toast(isImg?t("photoSent"):t("fileSent"));
+
+      if(isImg) {
+        // Сжимаем картинку до макс 600px и quality 0.7 перед отправкой
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 600;
+          let w = img.width, h = img.height;
+          if(w > MAX || h > MAX) {
+            if(w > h) { h = Math.round(h * MAX/w); w = MAX; }
+            else { w = Math.round(w * MAX/h); h = MAX; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          const compressed = canvas.toDataURL("image/jpeg", 0.7);
+          buildAndSend(compressed);
+        };
+        img.onerror = () => buildAndSend(rawData);
+        img.src = rawData;
+      } else {
+        // Для файлов не-картинок — только локально, без Firebase доставки (слишком большие)
+        const nm = {
+          id: Date.now(), from:"me",
+          time: new Date().toLocaleTimeString(timeLocale,{hour:"2-digit",minute:"2-digit"}),
+          text:"📎 "+file.name, fileType:"file", fileName:file.name,
+          fileSize: Math.round(file.size/1024)+"KB", fileData: rawData
+        };
+        setChats(c=>c.map(x=>String(x.id)===String(chatId)
+          ? {...x, lastMsg:"📎 "+file.name, time:t("nowTime"), messages:[...x.messages,nm]}
+          : x
+        ));
+        toast(t("fileSent"));
+        // Файл без данных — только уведомление получателю
+        const ac = chats.find(c=>String(c.id)===String(chatId));
+        if(ac) deliverToRecipient(ac, {...nm, fileData:null, text:"📎 "+file.name+" (откройте у отправителя)"});
+      }
     };
-    if (isImg) reader.readAsDataURL(file);
-    else reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
   }
 
   function getSupportedMime() {
@@ -1985,12 +2407,13 @@ function App() {
       reader.onload=ev=>{
         const dataUrl=ev.target.result;
         const dur=Math.max(1,Math.floor((Date.now()-startTime)/1000));
-        const ac=chats.find(c=>c.id===cid); if(!ac) return;
+        const ac=chats.find(c=>String(c.id)===String(cid)); if(!ac) return;
         const timeLocale=lang==="en"?"en":"ru";
         const nm={id:Date.now(),from:"me",text:"🎙️ Голосовое",time:new Date().toLocaleTimeString(timeLocale,{hour:"2-digit",minute:"2-digit"}),fileType:"voice",fileData:dataUrl,voiceDuration:dur,senderName:(ac.isChannel||ac.isGroup)?(user.displayName||user.username):null};
-        setChats(ch=>ch.map(x=>x.id===cid?{...x,lastMsg:"🎙️ Голосовое",time:"сейчас",messages:[...x.messages,nm].slice(-80)}:x));
+        setChats(ch=>ch.map(x=>String(x.id)===String(cid)?{...x,lastMsg:"🎙️ Голосовое",time:"сейчас",messages:[...x.messages,nm].slice(-80)}:x));
         playMsg();
-        if(ac.isAI){ setTimeout(()=>{ const am={id:Date.now()+1,from:"them",text:"🎙️ Голосовое получено! Я воспринимаю только текст 😊",time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}; setChats(ch=>ch.map(x=>x.id===cid?{...x,messages:[...x.messages,am]}:x)); },1200); }
+        if(ac.isAI){ setTimeout(()=>{ const am={id:Date.now()+1,from:"them",text:"🎙️ Голосовое получено! Я воспринимаю только текст 😊",time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}; setChats(ch=>ch.map(x=>String(x.id)===String(cid)?{...x,messages:[...x.messages,am]}:x)); },1200); }
+        deliverToRecipient(ac, nm);
       };
       reader.readAsDataURL(blob);
     };
@@ -2015,23 +2438,34 @@ function App() {
   const filtered    = chats.filter(c=>c.name.toLowerCase().includes(search.toLowerCase())||(c.channelId&&c.channelId.includes(search.toLowerCase().replace(/^@/,""))));
   const searchQ = search.toLowerCase().replace(/^@/,"").trim();
 
-  // Облачный поиск пользователей
+  // Облачный поиск пользователей и каналов
   const [cloudUsers, setCloudUsers] = React.useState([]);
+  const [cloudChannels, setCloudChannels] = React.useState([]);
   const [cloudSearching, setCloudSearching] = React.useState(false);
   const searchTimer = React.useRef(null);
 
   React.useEffect(()=>{
-    if(searchQ.length < 1){ setCloudUsers([]); return; }
+    if(searchQ.length < 1){ setCloudUsers([]); setCloudChannels([]); return; }
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(async ()=>{
       setCloudSearching(true);
       try {
-        const users = await cloudGetUsers();
         const q = searchQ;
+        // Ищем пользователей
+        const users = await cloudGetUsers();
         setCloudUsers(users.filter(u=>{
           if(u.username === user?.username) return false;
           return u.username.toLowerCase().includes(q)||(u.displayName||"").toLowerCase().includes(q);
         }));
+        // Ищем каналы в Firebase
+        const chData = await fbGet("/channels");
+        if(chData) {
+          const allChannels = Object.values(chData);
+          setCloudChannels(allChannels.filter(c=>
+            (c.name||"").toLowerCase().includes(q)||
+            (c.channelId||"").toLowerCase().includes(q)
+          ));
+        }
       } catch(e){}
       setCloudSearching(false);
     }, 400);
@@ -2048,28 +2482,65 @@ function App() {
     : [];
   const cloudFoundUsers = cloudUsers.filter(cu => !localFoundUsers.find(lu => lu.username === cu.username));
   const foundUsers = [...localFoundUsers, ...cloudFoundUsers];
-  function openUserProfile(chatOrAcc) {
-    // Берём самые свежие данные из accounts
-    const f = accounts.find(a =>
+  async function openUserProfile(chatOrAcc) {
+    // Сначала ищем локально
+    let f = accounts.find(a =>
       a.username === chatOrAcc.username ||
-      a.id === chatOrAcc.id ||
       a.username === chatOrAcc.name ||
       a.displayName === chatOrAcc.name
     );
-    if (!f) { toast(t("profileUnavailable")); return; }
-    // Объединяем подарки: реальные купленные (f.gifts) + отправленные в чат профиль
-    const chatInList = chats.find(c => !c.isChannel && !c.isGroup && !c.isAI && (c.username === f.username || c.name === (f.displayName||f.username)));
+    // Если не нашли — грузим из Firebase
+    if(!f && chatOrAcc.username) {
+      try { f = await fbGetAccount(chatOrAcc.username); } catch(e){}
+    }
+    // Если совсем нет — пробуем из cloudUsers
+    if(!f) {
+      f = cloudUsers.find(u => u.username===chatOrAcc.username || u.displayName===chatOrAcc.name);
+    }
+    if(!f) { toast(t("profileUnavailable")); return; }
+    const chatInList = chats.find(c => !c.isChannel && !c.isGroup && !c.isAI && c.username === f.username);
     const chatProfileGifts = chatInList?.profileGifts || chatOrAcc.profileGifts || [];
+    // Загружаем lastSeen
+    const ls = await fbGetLastSeen(f.username);
+    setLastSeenCache(prev=>({...prev,[f.username]:ls}));
     setViewProfile({
       ...f,
       profileGifts: [...(f.gifts||[]), ...chatProfileGifts.filter(g => !(f.gifts||[]).find(x=>x.id===g.id))]
     });
   }
+  // Polling presence видимых чатов каждые 15 сек
+  React.useEffect(()=>{
+    if(!user) return;
+    function refreshPresence() {
+      const dmChats = chats.filter(c=>!c.isAI&&!c.isChannel&&!c.isGroup&&c.username);
+      dmChats.forEach(ch=>{
+        fbGetLastSeen(ch.username).then(p=>setLastSeenCache(prev=>({...prev,[ch.username]:p})));
+      });
+    }
+    refreshPresence();
+    const iv = setInterval(refreshPresence, 15000);
+    return ()=>clearInterval(iv);
+  },[user, chats.length]);
+
+  function openChat(id) { 
+    const sid = String(id);
+    setChatId(sid); 
+    setChats(c=>c.map(x=>String(x.id)===sid?{...x,unread:0}:x));
+    // Сразу обновляем presence собеседника
+    const ch = chats.find(c=>String(c.id)===sid);
+    if(ch && ch.username && !ch.isAI && !ch.isChannel && !ch.isGroup) {
+      fbGetLastSeen(ch.username).then(p=>setLastSeenCache(prev=>({...prev,[ch.username]:p})));
+    }
+  }
+
   function openOrCreateChat(acc) {
-    const existing = chats.find(c => !c.isChannel && !c.isGroup && !c.isAI && (c.id === acc.id || c.username === acc.username || c.name === (acc.displayName||acc.username)));
+    if(!acc || !acc.username) return;
+    // Ищем чат ТОЛЬКО по username — самый надёжный ключ
+    const existing = chats.find(c => !c.isChannel && !c.isGroup && !c.isAI && c.username === acc.username);
     if(existing){ openChat(existing.id); setSearch(""); return; }
+    const newId = "dm_" + acc.username + "_" + user.username;
     const newChat = {
-      id: acc.id || (Date.now() + Math.random()),
+      id: newId,
       name: acc.displayName || acc.username,
       username: acc.username,
       avatar: (acc.displayName||acc.username)[0].toUpperCase(),
@@ -2085,16 +2556,17 @@ function App() {
       joinDate: acc.joinDate || null,
     };
     setChats(c=>[newChat, ...c]);
-    openChat(newChat.id);
+    openChat(newId);
     setSearch("");
   }
-  const activeChat  = chats.find(c=>c.id===chatId);
+  const activeChat  = chats.find(c=>String(c.id)===String(chatId));
 
   useEffect(()=>{ if(endRef.current) endRef.current.scrollIntoView({behavior:"smooth"}); },[chatId,chats,aiLoading]);
   useEffect(()=>{ if(user) { setPf({name:user.displayName||user.username,username:user.username,phone:user.phone||"",bio:user.bio||"Привет! Я использую METIKENGER",nameColor:user.nameColor||"",avatarBorder:user.avatarBorder||"",avatarBg:user.avatarBg||""}); setPfAvatar(user.avatarImg||null); } },[user]);
 
   async function doReg() {
-    const rawU=form.u.trim(), rawN=form.name.trim(), rawP=form.p.trim();
+    if(authLoading) return;
+    const rawU=form.u.trim(), rawN=form.name.trim(), rawP=form.p.trim(), rawP2=(form.p2||"").trim();
     if(!rawU||!rawN||!rawP){setFerr("Заполните все поля");return;}
     if(rawN.length<2){setFerr("Имя мин. 2 символа");return;}
     if(rawN.length>32){setFerr("Имя слишком длинное (макс. 32)");return;}
@@ -2103,6 +2575,8 @@ function App() {
     if(/[^\x20-\x7E]/.test(rawP)){setFerr("Пароль: только латинские символы");return;}
     if(rawP.length<6){setFerr("Пароль мин. 6 символов");return;}
     if(rawP.length>128){setFerr("Пароль слишком длинный");return;}
+    if(rawP !== rawP2){setFerr("⚠️ Пароли не совпадают");return;}
+    setAuthLoading(true);
     const u = sanitizeUsername(rawU);
     setFerr("⏳ Проверяем логин...");
     // Проверяем уникальность в Firebase
@@ -2122,15 +2596,18 @@ function App() {
     await cloudSaveUser({username:nu.username, displayName:nu.displayName, avatar:nu.avatar, color:nu.color, avatarImg:null, bio:nu.bio, joinDate:nu.joinDate, activeTitle:"", prem:false});
     // Сохраняем локально тоже
     setAccounts(a=>[...a,nu]);
-    setUser(nu); setScreen("beta"); setForm({u:"",name:"",p:""}); setFerr("");
+    setUser(nu); setScreen("beta"); setForm({u:"",name:"",p:"",p2:""}); setFerr(""); setAuthLoading(false);
+    try { localStorage.setItem("metik_session", JSON.stringify({username: nu.username, sessionToken: nu.sessionToken})); } catch(e){}
     rlReset(u);
   }
   async function doLog() {
+    if(authLoading) return;
     const rawU=form.u.trim(), rawP=form.p.trim();
     if(!rawU||!rawP){setFerr(t("errFill"));return;}
     const u = sanitizeUsername(rawU);
     const rl = rlCheck(u, t);
     if(rl.blocked){setFerr(rl.msg);return;}
+    setAuthLoading(true);
     const delay = ms => new Promise(r=>setTimeout(r,ms));
     setFerr("⏳ Входим...");
 
@@ -2146,7 +2623,7 @@ function App() {
     if(!found){
       await delay(420 + Math.random()*180);
       setFerr("❌ Аккаунт не найден. Если регистрировался давно — создай новый аккаунт.");
-      return;
+      setAuthLoading(false); return;
     }
 
     // Проверяем пароль
@@ -2155,7 +2632,7 @@ function App() {
     else { hash = await sha256(rawP); }
     if(hash !== found.passwordHash){
       await delay(420 + Math.random()*180);
-      setFerr(t("errWrong")); return;
+      setFerr(t("errWrong")); setAuthLoading(false); return;
     }
 
     let acc = found;
@@ -2184,9 +2661,16 @@ function App() {
     setActiveTitle(acc.activeTitle || "");
     setGifts(acc.gifts || []);
     setPrem(acc.prem || false);
-    if(savedChats && savedChats.length > 0) setChats(savedChats);
-    else if(acc.savedChats && acc.savedChats.length > 0) setChats(acc.savedChats);
-    setUser(acc); setScreen("main"); setForm({u:"",p:""}); setFerr("");
+    const loadedChats = (savedChats && savedChats.length > 0) ? savedChats : (acc.savedChats && acc.savedChats.length > 0 ? acc.savedChats : []);
+    if(loadedChats.length > 0) {
+      // Мержим: сохранённые чаты + системные которых нет
+      const savedIds = new Set(loadedChats.map(c=>String(c.id)));
+      const systemOnly = INIT_CHATS.filter(ic=>!savedIds.has(String(ic.id)));
+      setChats([...loadedChats, ...systemOnly]);
+    }
+    setUser(acc); setScreen("main"); setForm({u:"",name:"",p:"",p2:""}); setFerr(""); setAuthLoading(false);
+    try { localStorage.setItem("metik_session", JSON.stringify({username: acc.username, sessionToken: acc.sessionToken})); } catch(e){}
+    fbUpdateLastSeen(acc.username);
     rlReset(u);
   }
   function savePf() {
@@ -2196,16 +2680,22 @@ function App() {
     if (newUsername.length < 3) { toast(t("pfUserMin")); return; }
     if (newUsername !== user.username && accounts.find(a=>a.username===newUsername)) { toast(t("pfUserTaken")); return; }
     const up={...user,username:newUsername,displayName:pf.name.trim()||newUsername,phone:pf.phone.trim(),bio:pf.bio.trim(),nameColor:pf.nameColor,color:pf.nameColor||user.color,avatarBorder:pf.avatarBorder,avatarBg:pf.avatarBg,avatar:(pf.name.trim()||newUsername)[0].toUpperCase(),avatarImg:pfAvatar||user.avatarImg||null};
-    setUser(up); setAccounts(a=>a.map(x=>x.username===user.username?up:x)); setEditMode(false); toast(t("pfSaved"));
-    // Обновляем публичный профиль в облаке
-    cloudSaveUser({username:up.username, displayName:up.displayName, avatar:up.avatar, color:up.color, avatarImg:up.avatarImg||null, bio:up.bio, joinDate:up.joinDate, activeTitle:activeTitle, prem, nameColor:up.nameColor, avatarBorder:up.avatarBorder, avatarBg:up.avatarBg});
+    setUser(up);
+    setAccounts(a=>a.map(x=>x.username===user.username?up:x));
+    setEditMode(false);
+    toast(t("pfSaved"));
+    // Сохраняем в Firebase немедленно
+    fbSaveAccount({...up, straps, gifts, unlockedTitles, activeTitle, prem});
+    cloudSaveUser({username:up.username, displayName:up.displayName, avatar:up.avatar, color:up.color, avatarImg:up.avatarImg||null, bio:up.bio, joinDate:up.joinDate, activeTitle, prem, nameColor:up.nameColor, avatarBorder:up.avatarBorder, avatarBg:up.avatarBg});
+    // Обновляем сессию
+    try { localStorage.setItem("metik_session", JSON.stringify({username: up.username, sessionToken: up.sessionToken})); } catch(e){}
   }
 
   async function sendMsg() {
     if(!msg.trim()||!chatId) return;
     if(blockedContacts.includes(chatId)){ toast("🚫 Контакт заблокирован"); return; }
     if(msg.trim().length > MAX_MSG){ toast(t("msgTooLong").replace("{n}",MAX_MSG)); return; }
-    const ac = chats.find(c=>c.id===chatId);
+    const ac = chats.find(c=>String(c.id)===String(chatId));
     if(!ac) return;
     if(ac.isChannel && !ac.isOwned) return;
     const timeLocale = lang==="en" ? "en" : "ru";
@@ -2216,16 +2706,12 @@ function App() {
       senderName: (ac.isChannel||ac.isGroup) ? (user.displayName||user.username) : null,
     };
     const prevMsgs=[...ac.messages];
-    setChats(c=>c.map(x=>x.id===chatId?{...x,lastMsg:nm.text,time:t("nowTime"),messages:[...x.messages,nm].slice(-100)}:x));
+    setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,lastMsg:nm.text,time:t("nowTime"),messages:[...x.messages,nm].slice(-100)}:x));
     const sentText=msg.trim(); setMsg(""); setReplyTo(null);
     playMsg();
-    // Доставка сообщения получателю через Firebase
-    // Доставка через Firebase — ищем username получателя
+    // Доставка через Firebase
     if(!ac.isAI && !ac.isChannel && !ac.isGroup) {
-      const toUsername = ac.username || (cloudUsers.find(u=>(u.displayName||u.username)===ac.name)||{}).username;
-      if(toUsername) {
-        fbDeliverMessage(toUsername, user.username, user.displayName||user.username, user.avatar, user.color||"#6366F1", user.avatarImg||null, chatId, nm);
-      }
+      deliverToRecipient(ac, nm);
     }
     if(ac.isAI) {
       setAiLoading(true);
@@ -2289,7 +2775,7 @@ function App() {
           const rudeReplies = _rudeOnly ? matReplies : insultReplies;
           const reply = rudeReplies[Math.floor(Math.random()*rudeReplies.length)];
           const am = {id:Date.now()+1,from:"them",text:reply,time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})};
-          setChats(c=>c.map(x=>x.id===chatId?{...x,lastMsg:reply.slice(0,50),messages:[...x.messages,am].slice(-100)}:x));
+          setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,lastMsg:reply.slice(0,50),messages:[...x.messages,am].slice(-100)}:x));
           setAiLoading(false); return;
         }
         // Определяем запрос на картинку — широкий список триггеров
@@ -2304,7 +2790,7 @@ function App() {
           // Показываем "рисую"
           const thinkingId = Date.now()+1;
           const thinkingTime = new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"});
-          setChats(c=>c.map(x=>x.id===chatId?{...x,messages:[...x.messages,{id:thinkingId,from:"them",text:"🎨 Рисую... ~20 секунд",time:thinkingTime}].slice(-100)}:x));
+          setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:[...x.messages,{id:thinkingId,from:"them",text:"🎨 Рисую... ~20 секунд",time:thinkingTime}].slice(-100)}:x));
 
           // Переводим на английский
           let engPrompt = prompt;
@@ -2429,7 +2915,7 @@ function App() {
             reply = "Братик, сервер завис 😔 Попробуй написать ещё раз — обычно помогает!";
           }
           const am = {id:Date.now()+1,from:"them",text:reply,time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})};
-          setChats(c=>c.map(x=>x.id===chatId?{...x,lastMsg:reply.slice(0,50),messages:[...x.messages,am].slice(-100)}:x));
+          setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,lastMsg:reply.slice(0,50),messages:[...x.messages,am].slice(-100)}:x));
         }
       } catch(e) {
         const crashReplies = [
@@ -2439,7 +2925,7 @@ function App() {
         ];
         const errText = crashReplies[Math.floor(Math.random()*crashReplies.length)];
         const am = {id:Date.now()+1,from:"them",text:errText,time:new Date().toLocaleTimeString(lang==="en"?"en":"ru",{hour:"2-digit",minute:"2-digit"})};
-        setChats(c=>c.map(x=>x.id===chatId?{...x,messages:[...x.messages,am].slice(-100)}:x));
+        setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:[...x.messages,am].slice(-100)}:x));
       } finally {
         setAiLoading(false);
       }
@@ -2454,7 +2940,7 @@ function App() {
   ];
   function sendSticker(emoji) {
     if(!chatId) return;
-    const ac = chats.find(c=>c.id===chatId);
+    const ac = chats.find(c=>String(c.id)===String(chatId));
     if(!ac) return;
     const timeLocale = lang==="en" ? "en" : "ru";
     const nm = {
@@ -2463,11 +2949,30 @@ function App() {
       fileType:"sticker",
       senderName: (ac.isChannel||ac.isGroup) ? (user.displayName||user.username) : null,
     };
-    setChats(c=>c.map(x=>x.id===chatId?{...x,lastMsg:"Стикер "+emoji,time:t("nowTime"),messages:[...x.messages,nm]}:x));
+    setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,lastMsg:"Стикер "+emoji,time:t("nowTime"),messages:[...x.messages,nm]}:x));
     setEmojiPanel(false);
     playMsg();
+    deliverToRecipient(ac, nm);
   }
-  function openChat(id) { setChatId(id); setChats(c=>c.map(x=>x.id===id?{...x,unread:0}:x)); }
+  // Универсальная доставка любого сообщения получателю
+  function deliverToRecipient(ac, nm) {
+    if(!ac || ac.isAI || ac.isChannel || ac.isGroup) return;
+    const toUsername = ac.username || (cloudUsers.find(u=>(u.displayName||u.username)===ac.name)||{}).username;
+    if(!toUsername) return;
+    let msgToSend = {...nm};
+    // Firebase лимит ~10MB на узел — сжатые картинки (~80KB) проходят, голосовые нет
+    if(msgToSend.fileData && msgToSend.fileData.length > 500000) {
+      if(msgToSend.fileType==="voice") {
+        msgToSend = {...msgToSend, fileData:null, text:"🎙️ Голосовое сообщение"};
+      } else if(msgToSend.fileType==="image") {
+        msgToSend = {...msgToSend, fileData:null, text:"📷 Фото (слишком большое)"};
+      } else {
+        msgToSend = {...msgToSend, fileData:null};
+      }
+    }
+    const stableId = "dm_" + user.username + "_" + toUsername;
+    fbDeliverMessage(toUsername, user.username, user.displayName||user.username, user.avatar, user.color||"#6366F1", user.avatarImg||null, stableId, msgToSend);
+  }
 
   function unlockTitle(title) {
     setUnlockedTitles(prev => {
@@ -2476,6 +2981,8 @@ function App() {
         const up = {...user, unlockedTitles: next};
         setUser(up);
         setAccounts(a => a.map(x => x.username===user.username ? up : x));
+        fbSaveAccount({...up, straps, gifts, activeTitle, prem});
+        cloudSaveUser({username:up.username, displayName:up.displayName, avatar:up.avatar, color:up.color, avatarImg:up.avatarImg||null, bio:up.bio, joinDate:up.joinDate, activeTitle, prem, nameColor:up.nameColor, avatarBorder:up.avatarBorder, avatarBg:up.avatarBg});
       }
       return next;
     });
@@ -2486,6 +2993,8 @@ function App() {
       const up = {...user, activeTitle: title};
       setUser(up);
       setAccounts(a => a.map(x => x.username===user.username ? up : x));
+      fbSaveAccount({...up, straps, gifts, unlockedTitles, prem});
+      cloudSaveUser({username:up.username, displayName:up.displayName, avatar:up.avatar, color:up.color, avatarImg:up.avatarImg||null, bio:up.bio, joinDate:up.joinDate, activeTitle:title, prem, nameColor:up.nameColor, avatarBorder:up.avatarBorder, avatarBg:up.avatarBg});
     }
   }
   function htitle() { return {chats:t("chats"),profile:t("profile"),gifts:t("gifts"),settings:t("settings"),premium:t("premium"),market:"🛒 Рынок"}[tab]||""; }
@@ -2512,6 +3021,19 @@ function App() {
           </div>
           <button className="gb" onClick={()=>setScreen("main")} style={{width:"100%",padding:"15px",borderRadius:"16px",fontSize:"15px",fontWeight:800}}>Понятно, войти! ✈️</button>
         </div>
+      </div>
+    </div>
+  );
+
+  /* ─── LOADING ─── */
+  if(screen==="loading") return (
+    <div style={{position:"fixed",inset:0,background:TH.dark.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"24px"}}>
+      <div style={{width:"80px",height:"80px",background:"linear-gradient(135deg,#6366F1,#4F46E5)",borderRadius:"26px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"36px",boxShadow:"0 20px 60px rgba(99,102,241,0.5)"}}>✈️</div>
+      <div style={{color:"#ECF0FF",fontSize:"22px",fontWeight:900,fontFamily:"'Syne',sans-serif",letterSpacing:"-1px"}}>METIKENGER</div>
+      <div style={{display:"flex",gap:"8px"}}>
+        {[0,1,2].map(i=>(
+          <div key={i} style={{width:"8px",height:"8px",borderRadius:"50%",background:"#6366F1",animation:"dot 1.2s ease-in-out infinite",animationDelay:(i*0.2)+"s"}}/>
+        ))}
       </div>
     </div>
   );
@@ -2610,10 +3132,28 @@ function App() {
                 })()}
               </div>
 
+              {authMode==="register" && (
+                <div style={{marginBottom:"6px"}}>
+                  <div style={{color:T.mu,fontSize:"9px",fontWeight:700,letterSpacing:"1.5px",marginBottom:"7px",textTransform:"uppercase"}}>🔒 ПОВТОРИ ПАРОЛЬ</div>
+                  <input className="ai" type="password" placeholder="Повтори пароль" value={form.p2||""}
+                    onChange={e=>setForm({...form,p2:e.target.value.replace(/[^ -~]/g,"")})}
+                    onKeyDown={e=>e.key==="Enter"&&doReg()}
+                    autoComplete="new-password"
+                    style={{display:"block",width:"100%",padding:"14px 15px",fontSize:"14px",
+                      borderColor: form.p2&&form.p2!==form.p?"#F87171":undefined}}/>
+                  {form.p2 && form.p2!==form.p && (
+                    <div style={{color:"#F87171",fontSize:"10px",fontWeight:700,marginTop:"5px"}}>⚠️ Пароли не совпадают</div>
+                  )}
+                  {form.p2 && form.p2===form.p && (
+                    <div style={{color:"#22C55E",fontSize:"10px",fontWeight:700,marginTop:"5px"}}>✅ Пароли совпадают</div>
+                  )}
+                </div>
+              )}
+
               {ferr && <div style={{color:"#F87171",background:"rgba(239,68,68,0.09)",padding:"11px 14px",borderRadius:"13px",fontSize:"12px",fontWeight:700,marginBottom:"14px",marginTop:"10px",border:"1px solid rgba(239,68,68,0.22)",display:"flex",alignItems:"center",gap:"7px"}}><span>⚠️</span><span>{ferr}</span></div>}
 
               <button className="gb" onClick={authMode==="register"?doReg:doLog} style={{display:"block",width:"100%",padding:"16px",fontSize:"15px",marginTop:"16px",fontWeight:700}}>
-                {authMode==="register"?t("doRegister"):t("doLogin")}
+                {authLoading?"⏳ Загрузка...":authMode==="register"?t("doRegister"):t("doLogin")}
               </button>
 
               {authMode==="login" && <div style={{textAlign:"center",marginTop:"12px",color:T.mu,fontSize:"10px",fontWeight:500}}>{t("loginAttemptHint")}</div>}
@@ -2733,7 +3273,81 @@ function App() {
       )}
       {gModal       && <GiftModal T={T} A={A} straps={straps} setStraps={setStraps} balloonCount={totalBoughtBalloon} appleCount={totalBoughtApple} setGifts={setGifts} setGModal={setGModal} setTotalBoughtBalloon={setTotalBoughtBalloon} setTotalBoughtApple={setTotalBoughtApple} toast={toast} lang={lang} initialType={gModal}/>}
       {giftDetail   && <GiftDetail T={T} A={A} giftDetail={giftDetail} setGiftDetail={setGiftDetail} setGifts={setGifts} setStraps={setStraps} toast={toast} lang={lang}/>}
-      {viewProfile  && <UserProfileModal T={T} A={A} viewProfile={viewProfile} setViewProfile={setViewProfile} lang={lang}/>}
+      {viewProfile  && <UserProfileModal T={T} A={A} viewProfile={viewProfile} setViewProfile={setViewProfile} lang={lang} lastSeenCache={lastSeenCache}/>}
+
+      {/* ── СКРЫТЫЙ АУДИО для удалённого потока ── */}
+      <audio ref={remoteAudioRef} autoPlay playsInline style={{display:"none"}}/>
+
+      {/* ── ВХОДЯЩИЙ ЗВОНОК ── */}
+      {callState==="incoming" && callWith && (
+        <div style={{position:"fixed",inset:0,zIndex:9000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 40px",background:"rgba(0,0,0,0.55)",WebkitBackdropFilter:"blur(12px)",backdropFilter:"blur(12px)",animation:"fadeIn 0.3s ease"}}>
+          <div style={{width:"100%",maxWidth:"380px",background:"linear-gradient(160deg,#1a1a2e,#16213e,#0f3460)",borderRadius:"32px 32px 0 0",padding:"32px 24px 28px",boxShadow:"0 -20px 80px rgba(0,0,0,0.5)",border:"1px solid rgba(255,255,255,0.08)",animation:"slideUp 0.4s cubic-bezier(.16,1,.3,1)"}}>
+            <div style={{textAlign:"center",marginBottom:"28px"}}>
+              <div style={{fontSize:"11px",fontWeight:800,letterSpacing:"2px",color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:"10px"}}>Входящий звонок</div>
+              <div style={{width:"80px",height:"80px",borderRadius:"50%",background:callWith.color||"#6366F1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px",fontWeight:900,color:"#fff",margin:"0 auto 14px",boxShadow:"0 0 0 6px rgba(255,255,255,0.08),0 0 0 12px rgba(255,255,255,0.04)",animation:"ringPulse 1.5s infinite"}}>{callWith.avatar||callWith.displayName?.[0]?.toUpperCase()||"?"}</div>
+              <div style={{color:"#fff",fontWeight:800,fontSize:"22px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.5px"}}>{callWith.displayName}</div>
+              <div style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",marginTop:"4px"}}>@{callWith.username}</div>
+            </div>
+            <div style={{display:"flex",gap:"16px",justifyContent:"center"}}>
+              <button onClick={()=>{ fbSet("/calls/"+callRoomRef.current+"/status","rejected"); cleanupCall(); }}
+                style={{flex:1,padding:"18px",borderRadius:"20px",border:"none",background:"rgba(239,68,68,0.2)",color:"#F87171",fontSize:"13px",fontWeight:800,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",border:"1px solid rgba(239,68,68,0.3)"}}>
+                <span style={{fontSize:"28px"}}>📵</span>Отклонить
+              </button>
+              <button onClick={()=>answerCall(callRoomRef.current, callWith)}
+                style={{flex:1,padding:"18px",borderRadius:"20px",border:"none",background:"linear-gradient(135deg,#22C55E,#16A34A)",color:"#fff",fontSize:"13px",fontWeight:800,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",boxShadow:"0 8px 24px rgba(34,197,94,0.4)"}}>
+                <span style={{fontSize:"28px"}}>📞</span>Принять
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ИСХОДЯЩИЙ / АКТИВНЫЙ ЗВОНОК ── */}
+      {(callState==="calling"||callState==="active") && callWith && (
+        <div style={{position:"fixed",inset:0,zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(160deg,#0f0c29,#302b63,#24243e)",animation:"fadeIn 0.35s ease"}}>
+          {/* BG orbs */}
+          <div style={{position:"absolute",top:"10%",left:"20%",width:"300px",height:"300px",borderRadius:"50%",background:"#6366F144",filter:"blur(80px)",animation:"orbFloat 6s ease-in-out infinite",pointerEvents:"none"}}/>
+          <div style={{position:"absolute",bottom:"10%",right:"15%",width:"250px",height:"250px",borderRadius:"50%",background:"#22C55E33",filter:"blur(80px)",animation:"orbFloat 8s ease-in-out infinite 2s",pointerEvents:"none"}}/>
+          <div style={{textAlign:"center",position:"relative",zIndex:1,width:"100%",maxWidth:"360px",padding:"0 24px"}}>
+            {/* Аватар */}
+            <div style={{position:"relative",display:"inline-block",marginBottom:"24px"}}>
+              <div style={{width:"110px",height:"110px",borderRadius:"50%",background:callWith.color||"#6366F1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"44px",fontWeight:900,color:"#fff",margin:"0 auto",boxShadow:"0 0 0 8px rgba(255,255,255,0.06),0 0 0 16px rgba(255,255,255,0.03)",animation:callState==="active"?"none":"ringPulse 1.5s infinite"}}>{callWith.avatar||callWith.displayName?.[0]?.toUpperCase()||"?"}</div>
+              {callState==="active"&&<div style={{position:"absolute",bottom:"4px",right:"4px",width:"24px",height:"24px",borderRadius:"50%",background:"#22C55E",border:"3px solid #0f0c29",boxShadow:"0 0 12px #22C55E"}}/>}
+            </div>
+            {/* Имя */}
+            <div style={{color:"#fff",fontWeight:900,fontSize:"26px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.5px",marginBottom:"6px"}}>{callWith.displayName}</div>
+            <div style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",marginBottom:"8px"}}>@{callWith.username}</div>
+            {/* Статус */}
+            <div style={{color:"rgba(255,255,255,0.6)",fontSize:"14px",fontWeight:600,marginBottom:"40px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+              {callState==="calling"
+                ? <><span style={{width:"8px",height:"8px",borderRadius:"50%",background:"#F59E0B",animation:"ringPulse 1s infinite",display:"inline-block"}}/>Вызов...</>
+                : <><span style={{color:"#22C55E",fontWeight:800,fontSize:"16px",letterSpacing:"1px",fontFamily:"'Syne',sans-serif"}}>{fmtCallTime(callTimer)}</span></>
+              }
+            </div>
+            {/* Кнопки */}
+            <div style={{display:"flex",gap:"20px",justifyContent:"center",alignItems:"center"}}>
+              {callState==="active"&&(
+                <button onClick={toggleMute}
+                  style={{width:"64px",height:"64px",borderRadius:"50%",border:"none",background:callMuted?"rgba(239,68,68,0.25)":"rgba(255,255,255,0.1)",color:callMuted?"#F87171":"#fff",fontSize:"22px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid "+(callMuted?"rgba(239,68,68,0.4)":"rgba(255,255,255,0.15)"),transition:"all 0.2s"}}>
+                  {callMuted?"🔇":"🎙️"}
+                </button>
+              )}
+              <button onClick={()=>endCall()}
+                style={{width:"72px",height:"72px",borderRadius:"50%",border:"none",background:"linear-gradient(135deg,#EF4444,#DC2626)",color:"#fff",fontSize:"26px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 28px rgba(239,68,68,0.5)",transition:"all 0.2s"}}
+                onMouseEnter={e=>e.currentTarget.style.transform="scale(1.08)"}
+                onMouseLeave={e=>e.currentTarget.style.transform=""}>
+                📵
+              </button>
+              {callState==="active"&&(
+                <button onClick={()=>setCallSpeaker(v=>!v)}
+                  style={{width:"64px",height:"64px",borderRadius:"50%",border:"none",background:callSpeaker?"rgba(99,102,241,0.25)":"rgba(255,255,255,0.1)",color:callSpeaker?"#818CF8":"#fff",fontSize:"22px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid "+(callSpeaker?"rgba(99,102,241,0.4)":"rgba(255,255,255,0.15)"),transition:"all 0.2s"}}>
+                  {callSpeaker?"🔊":"🔈"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {chatInfo     && <ChatInfoModal T={T} A={A} chat={chatInfo} isOwner={chatInfo.isOwned} accounts={accounts} onClose={()=>setChatInfo(null)} lang={lang}/>}
       {createChannel && <CreateChannelModal T={T} A={A} setCreateChannel={setCreateChannel} setChats={setChats} toast={toast} lang={lang}/>}
       {createGroup && <CreateGroupModal T={T} A={A} setCreateGroup={setCreateGroup} setChats={setChats} toast={toast} lang={lang} user={user}/>}
@@ -2815,7 +3429,7 @@ function App() {
             </div>
           </div>
           <div style={{padding:"14px 20px",paddingBottom:"max(14px,env(safe-area-inset-bottom))",borderTop:"1px solid "+T.bo,background:T.pa}}>
-            <button onClick={()=>{const up={...user,nameColor:pf.nameColor,avatarBorder:pf.avatarBorder,avatarBg:pf.avatarBg,color:pf.nameColor||user.color};setUser(up);setAccounts(a=>a.map(x=>x.username===user.username?up:x));setPfPanel(null);toast('✅ Сохранено!');}} style={{width:"100%",padding:"15px",borderRadius:"16px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"none",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",boxShadow:"0 6px 22px "+A.glow}}>✓ Применить</button>
+            <button onClick={()=>{const up={...user,nameColor:pf.nameColor,avatarBorder:pf.avatarBorder,avatarBg:pf.avatarBg,color:pf.nameColor||user.color};setUser(up);setAccounts(a=>a.map(x=>x.username===user.username?up:x));fbSaveAccount({...up,straps,gifts,unlockedTitles,activeTitle,prem});cloudSaveUser({username:up.username,displayName:up.displayName,avatar:up.avatar,color:up.color,avatarImg:up.avatarImg||null,bio:up.bio,joinDate:up.joinDate,activeTitle,prem,nameColor:up.nameColor,avatarBorder:up.avatarBorder,avatarBg:up.avatarBg});setPfPanel(null);toast('✅ Сохранено!');}} style={{width:"100%",padding:"15px",borderRadius:"16px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"none",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",boxShadow:"0 6px 22px "+A.glow}}>✓ Применить</button>
           </div>
         </div>
       )}
@@ -2968,7 +3582,7 @@ function App() {
             </div>
           </div>
           <div style={{padding:"14px 20px",paddingBottom:"max(14px,env(safe-area-inset-bottom))",borderTop:"1px solid "+T.bo,background:T.pa}}>
-            <button onClick={()=>{const up={...user,nameColor:pf.nameColor,avatarBorder:pf.avatarBorder,avatarBg:pf.avatarBg,color:pf.nameColor||user.color};setUser(up);setAccounts(a=>a.map(x=>x.username===user.username?up:x));setPfPanel(null);toast('✅ Сохранено!');}} style={{width:"100%",padding:"15px",borderRadius:"16px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"none",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",boxShadow:"0 6px 22px "+A.glow}}>✓ Применить</button>
+            <button onClick={()=>{const up={...user,nameColor:pf.nameColor,avatarBorder:pf.avatarBorder,avatarBg:pf.avatarBg,color:pf.nameColor||user.color};setUser(up);setAccounts(a=>a.map(x=>x.username===user.username?up:x));fbSaveAccount({...up,straps,gifts,unlockedTitles,activeTitle,prem});cloudSaveUser({username:up.username,displayName:up.displayName,avatar:up.avatar,color:up.color,avatarImg:up.avatarImg||null,bio:up.bio,joinDate:up.joinDate,activeTitle,prem,nameColor:up.nameColor,avatarBorder:up.avatarBorder,avatarBg:up.avatarBg});setPfPanel(null);toast('✅ Сохранено!');}} style={{width:"100%",padding:"15px",borderRadius:"16px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"none",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",boxShadow:"0 6px 22px "+A.glow}}>✓ Применить</button>
           </div>
         </div>
       )}
@@ -3070,7 +3684,7 @@ function App() {
             </div>
           </div>
           <div style={{padding:"14px 20px",paddingBottom:"max(14px,env(safe-area-inset-bottom))",borderTop:"1px solid "+T.bo,background:T.pa}}>
-            <button onClick={()=>{const up={...user,nameColor:pf.nameColor,avatarBorder:pf.avatarBorder,avatarBg:pf.avatarBg,color:pf.nameColor||user.color};setUser(up);setAccounts(a=>a.map(x=>x.username===user.username?up:x));setPfPanel(null);toast('✅ Сохранено!');}} style={{width:"100%",padding:"15px",borderRadius:"16px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"none",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",boxShadow:"0 6px 22px "+A.glow}}>✓ Применить</button>
+            <button onClick={()=>{const up={...user,nameColor:pf.nameColor,avatarBorder:pf.avatarBorder,avatarBg:pf.avatarBg,color:pf.nameColor||user.color};setUser(up);setAccounts(a=>a.map(x=>x.username===user.username?up:x));fbSaveAccount({...up,straps,gifts,unlockedTitles,activeTitle,prem});cloudSaveUser({username:up.username,displayName:up.displayName,avatar:up.avatar,color:up.color,avatarImg:up.avatarImg||null,bio:up.bio,joinDate:up.joinDate,activeTitle,prem,nameColor:up.nameColor,avatarBorder:up.avatarBorder,avatarBg:up.avatarBg});setPfPanel(null);toast('✅ Сохранено!');}} style={{width:"100%",padding:"15px",borderRadius:"16px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"none",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",boxShadow:"0 6px 22px "+A.glow}}>✓ Применить</button>
           </div>
         </div>
       )}
@@ -3145,6 +3759,7 @@ function App() {
             }
             _savingUser.current = null;
             clearTimeout(_saveTimer.current);
+            try { localStorage.removeItem("metik_session"); } catch(e){}
             setStraps(0); setGifts([]); setChats(INIT_CHATS); setUnlockedTitles([]); setActiveTitle(""); setPrem(false);
             setScreen("auth");setUser(null);setChatId(null);setSidebar(false);setAuthMode("register");setForm({u:"",name:"",p:""});
           }} style={{color:"#F87171"}}>
@@ -3207,7 +3822,7 @@ function App() {
 
           {/* ── CHATS LIST ── */}
           {tab==="chats" && (
-            (filtered.length === 0 && foundUsers.length === 0 && !cloudSearching)
+            (filtered.length === 0 && foundUsers.length === 0)
               ? <div style={{padding:"70px 24px",textAlign:"center",animation:"fadeIn 0.35s cubic-bezier(.16,1,.3,1)"}}>
                   <div style={{width:"80px",height:"80px",borderRadius:"26px",
                     background:"linear-gradient(135deg,"+A.main+"18,"+A.dark+"0a)",
@@ -3220,65 +3835,8 @@ function App() {
                   <div style={{color:T.mu,fontSize:"13px",lineHeight:"1.6",maxWidth:"200px",margin:"0 auto"}}>{t("noChats")}</div>
                 </div>
               : <div style={{padding:"8px 10px"}}>
-                  {/* Users section */}
-                  {(foundUsers.length > 0 || cloudSearching) && (
-                    <div style={{marginBottom:"8px"}}>
-                      <div style={{color:T.mu,fontSize:"9px",fontWeight:800,letterSpacing:"2px",textTransform:"uppercase",padding:"4px 10px 8px",display:"flex",alignItems:"center",gap:"7px"}}>
-                        <span>👤 ПОЛЬЗОВАТЕЛИ</span>
-                        {cloudSearching
-                          ? <span style={{color:A.main,fontSize:"9px",fontWeight:700,animation:"pulse 1s infinite"}}>🔄 поиск...</span>
-                          : <span style={{background:A.main+"22",color:A.main,fontSize:"9px",fontWeight:700,padding:"1px 7px",borderRadius:"8px",border:"1px solid "+A.main+"28"}}>{foundUsers.length}</span>
-                        }
-                      </div>
-                      {foundUsers.map((acc, idx) => {
-                        const hasChat = chats.find(c => !c.isChannel && !c.isGroup && !c.isAI && (c.username === acc.username || c.name === (acc.displayName||acc.username)));
-                        return (
-                          <div key={acc.username} onClick={()=>openOrCreateChat(acc)}
-                            style={{display:"flex",alignItems:"center",gap:"13px",padding:"9px 10px",
-                              borderRadius:"18px",marginBottom:"2px",cursor:"pointer",
-                              background:"transparent",border:"1px solid "+A.main+"20",
-                              transition:"all 0.2s cubic-bezier(.16,1,.3,1)",
-                              animation:"chatItemIn 0.3s cubic-bezier(.16,1,.3,1) "+(idx*0.04)+"s both"}}
-                            onMouseEnter={e=>{e.currentTarget.style.background=A.main+"12";e.currentTarget.style.borderColor=A.main+"44";e.currentTarget.style.transform="translateX(2px)";}}
-                            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor=A.main+"20";e.currentTarget.style.transform="";}}>
-                            <div style={{position:"relative",flexShrink:0}}>
-                              <div style={{width:"48px",height:"48px",borderRadius:"16px",
-                                background:acc.avatarBorder||acc.color||A.main,
-                                padding:acc.avatarBorder?"3px":"0",
-                                display:"flex",alignItems:"center",justifyContent:"center",
-                                boxShadow:"0 3px 12px "+(acc.color||A.main)+"44",overflow:"hidden"}}>
-                                <div style={{width:"100%",height:"100%",borderRadius:"13px",background:acc.color||A.main,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",fontWeight:900,color:"#fff",overflow:"hidden"}}>
-                                  {acc.avatarImg?<img src={acc.avatarImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span>{(acc.displayName||acc.username)[0].toUpperCase()}</span>}
-                                </div>
-                              </div>
-                              <div style={{position:"absolute",bottom:"-1px",right:"-1px",width:"12px",height:"12px",borderRadius:"50%",background:"#22C55E",border:"2px solid "+T.bg,boxShadow:"0 0 6px #22C55E99"}}/>
-                            </div>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"3px"}}>
-                                <span style={{color:T.tx,fontWeight:700,fontSize:"14px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"140px"}}>{acc.displayName||acc.username}</span>
-                                {acc.activeTitle==="creator"&&<span style={{fontSize:"10px",color:"#FFD700"}}>👑</span>}
-                                {acc.activeTitle==="owner"&&<span style={{fontSize:"10px",color:"#A78BFA"}}>💎</span>}
-                              </div>
-                              <div style={{color:T.mu,fontSize:"11px",fontWeight:500}}>@{acc.username}</div>
-                            </div>
-                            <div style={{flexShrink:0}}>
-                              {hasChat
-                                ? <span style={{background:A.main+"18",color:A.main,fontSize:"10px",fontWeight:700,padding:"4px 10px",borderRadius:"10px",border:"1px solid "+A.main+"28"}}>Открыть</span>
-                                : <span style={{background:"#22C55E18",color:"#22C55E",fontSize:"10px",fontWeight:700,padding:"4px 10px",borderRadius:"10px",border:"1px solid #22C55E28"}}>Написать</span>
-                              }
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {filtered.length > 0 && (
-                        <div style={{color:T.mu,fontSize:"9px",fontWeight:800,letterSpacing:"2px",textTransform:"uppercase",padding:"10px 10px 6px",marginTop:"4px",borderTop:"1px solid "+T.bo+"44"}}>
-                          💬 ЧАТЫ
-                        </div>
-                      )}
-                    </div>
-                  )}
                   {filtered.map((ch,idx)=>{
-                    const isActive = chatId===ch.id;
+                    const isActive = String(chatId)===String(ch.id);
                     return (
                       <div key={ch.id} onClick={()=>openChat(ch.id)}
                         style={{display:"flex",alignItems:"center",gap:"13px",padding:"9px 10px",
@@ -3303,7 +3861,11 @@ function App() {
                           {ch.isAI && <div style={{position:"absolute",bottom:"-2px",right:"-2px",width:"19px",height:"19px",borderRadius:"8px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"2px solid "+T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px",fontWeight:900,boxShadow:"0 2px 8px "+A.glow}}>✦</div>}
                           {ch.isChannel && !ch.isAI && <div style={{position:"absolute",bottom:"-2px",right:"-2px",width:"19px",height:"19px",borderRadius:"8px",background:"linear-gradient(135deg,#06B6D4,#0891B2)",border:"2px solid "+T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px"}}>📢</div>}
                           {ch.isGroup && <div style={{position:"absolute",bottom:"-2px",right:"-2px",width:"19px",height:"19px",borderRadius:"8px",background:"linear-gradient(135deg,#8B5CF6,#7C3AED)",border:"2px solid "+T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px"}}>👥</div>}
-                          {!ch.isAI && !ch.isChannel && !ch.isGroup && <div style={{position:"absolute",bottom:"-1px",right:"-1px",width:"12px",height:"12px",borderRadius:"50%",background:"#22C55E",border:"2px solid "+T.bg,boxShadow:"0 0 7px #22C55E99"}}/>}
+                          {!ch.isAI && !ch.isChannel && !ch.isGroup && (()=>{
+                            const ls = lastSeenCache[ch.username] || 0;
+                            const on = isOnline(ls);
+                            return <div style={{position:"absolute",bottom:"-1px",right:"-1px",width:"12px",height:"12px",borderRadius:"50%",background:on?"#22C55E":"#64748B",border:"2px solid "+T.bg,boxShadow:on?"0 0 7px #22C55E99":"none"}}/>;
+                          })()}
                         </div>
                         {/* Info */}
                         <div style={{flex:1,minWidth:0}}>
@@ -3334,6 +3896,81 @@ function App() {
                       </div>
                     );
                   })}
+                  {/* Найденные пользователи из облака */}
+                  {searchQ && foundUsers.length > 0 && (
+                    <>
+                      {filtered.length > 0 && <div style={{height:"1px",background:T.bo+"44",margin:"6px 0"}}/>}
+                      <div style={{color:T.mu,fontSize:"9px",fontWeight:800,letterSpacing:"2px",textTransform:"uppercase",padding:"4px 10px 6px"}}>👤 ПОЛЬЗОВАТЕЛИ</div>
+                      {foundUsers.map((acc,idx)=>{
+                        const hasChat = chats.find(c=>!c.isAI&&!c.isChannel&&!c.isGroup&&c.username===acc.username);
+                        return (
+                          <div key={acc.username} onClick={()=>{ try{ openOrCreateChat(acc); }catch(e){} }}
+                            style={{display:"flex",alignItems:"center",gap:"13px",padding:"9px 10px",borderRadius:"18px",marginBottom:"2px",cursor:"pointer",background:"transparent",border:"1px solid "+A.main+"20",transition:"all 0.18s"}}
+                            onMouseEnter={e=>{e.currentTarget.style.background=A.main+"12";e.currentTarget.style.borderColor=A.main+"44";}}
+                            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor=A.main+"20";}}>
+                            <div style={{width:"46px",height:"46px",borderRadius:"15px",background:acc.color||A.main,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",fontWeight:900,color:"#fff",flexShrink:0,overflow:"hidden",boxShadow:"0 3px 10px "+(acc.color||A.main)+"44"}}>
+                              {acc.avatarImg?<img src={acc.avatarImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span>{(acc.displayName||acc.username||"?")[0].toUpperCase()}</span>}
+                            </div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
+                                <span style={{color:acc.nameColor||T.tx,fontWeight:700,fontSize:"14px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"140px"}}>{acc.displayName||acc.username}</span>
+                                {acc.activeTitle==="creator"&&<span style={{fontSize:"10px"}}>👑</span>}
+                                {acc.activeTitle==="owner"&&<span style={{fontSize:"10px"}}>💎</span>}
+                                {acc.prem&&<span style={{fontSize:"9px",color:A.main}}>✦</span>}
+                              </div>
+                              <div style={{color:T.mu,fontSize:"11px"}}>@{acc.username}</div>
+                            </div>
+                            <span style={{background:hasChat?A.main+"18":"#22C55E18",color:hasChat?A.main:"#22C55E",fontSize:"10px",fontWeight:700,padding:"4px 10px",borderRadius:"10px",border:"1px solid "+(hasChat?A.main+"28":"#22C55E28"),flexShrink:0}}>
+                              {hasChat?"Открыть":"Написать"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                  {/* Найденные каналы из облака */}
+                  {searchQ && cloudChannels.length > 0 && (
+                    <>
+                      {(filtered.length > 0 || foundUsers.length > 0) && <div style={{height:"1px",background:T.bo+"44",margin:"6px 0"}}/>}
+                      <div style={{color:T.mu,fontSize:"9px",fontWeight:800,letterSpacing:"2px",textTransform:"uppercase",padding:"4px 10px 6px"}}>📢 КАНАЛЫ</div>
+                      {cloudChannels.map((ch,idx)=>{
+                        const alreadyIn = chats.find(c=>c.isChannel&&(c.channelId===ch.channelId||String(c.id)===String(ch.id)));
+                        return (
+                          <div key={ch.channelId} onClick={()=>{
+                            if(alreadyIn){ openChat(alreadyIn.id); setSearch(""); return; }
+                            // Вступаем в канал (только чтение)
+                            const newCh = {
+                              id: ch.id||String(Date.now()),
+                              name: ch.name, channelId: ch.channelId,
+                              avatar: ch.avatar||"📢", avatarImg: ch.avatarImg||null,
+                              color: ch.color||A.main,
+                              lastMsg: ch.desc||"Канал", time:"", unread:0,
+                              isChannel:true, isAI:false, isOwned:false, desc:ch.desc||"",
+                              messages:[]
+                            };
+                            setChats(c=>[newCh,...c]);
+                            openChat(newCh.id);
+                            setSearch("");
+                            toast("📢 Вступил в @"+ch.channelId);
+                          }}
+                            style={{display:"flex",alignItems:"center",gap:"13px",padding:"9px 10px",borderRadius:"18px",marginBottom:"2px",cursor:"pointer",background:"transparent",border:"1px solid #06B6D422",transition:"all 0.18s"}}
+                            onMouseEnter={e=>{e.currentTarget.style.background="#06B6D412";e.currentTarget.style.borderColor="#06B6D444";}}
+                            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor="#06B6D422";}}>
+                            <div style={{width:"46px",height:"46px",borderRadius:"15px",background:ch.color||"#06B6D4",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0,overflow:"hidden",boxShadow:"0 3px 10px "+(ch.color||"#06B6D4")+"44"}}>
+                              {ch.avatarImg?<img src={ch.avatarImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span>{ch.avatar||"📢"}</span>}
+                            </div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{color:T.tx,fontWeight:700,fontSize:"14px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ch.name}</div>
+                              <div style={{color:T.mu,fontSize:"11px"}}>@{ch.channelId} · 📢 Канал</div>
+                            </div>
+                            <span style={{background:alreadyIn?"#06B6D418":"#22C55E18",color:alreadyIn?"#06B6D4":"#22C55E",fontSize:"10px",fontWeight:700,padding:"4px 10px",borderRadius:"10px",border:"1px solid "+(alreadyIn?"#06B6D428":"#22C55E28"),flexShrink:0}}>
+                              {alreadyIn?"Открыть":"Вступить"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
           )}
 
@@ -3507,59 +4144,173 @@ function App() {
           {tab==="gifts" && <div style={{width:"100%"}}><div style={{padding:"20px 16px 32px",maxWidth:"560px",width:"100%",margin:"0 auto"}}>
 
             {/* ── BALANCE HERO ── */}
-            <div style={{
-              background:"linear-gradient(135deg,"+A.main+"22,"+A.dark+"10)",
-              borderRadius:"28px",padding:"0",marginBottom:"20px",
-              border:"1px solid "+A.main+"30",
-              position:"relative",overflow:"hidden",
-              animation:"fadeIn 0.3s cubic-bezier(.16,1,.3,1)"
-            }}>
-              {/* Top shimmer line */}
-              <div style={{height:"2px",background:"linear-gradient(90deg,transparent,"+A.main+","+A.dark+",transparent)",opacity:0.8}}/>
-              {/* BG orbs */}
-              <div style={{position:"absolute",top:"-40px",right:"-40px",width:"180px",height:"180px",borderRadius:"50%",background:A.glow,filter:"blur(60px)",opacity:0.4,pointerEvents:"none"}}/>
-              <div style={{position:"absolute",bottom:"-30px",left:"-20px",width:"120px",height:"120px",borderRadius:"50%",background:A.glow,filter:"blur(50px)",opacity:0.2,pointerEvents:"none"}}/>
-              <div style={{position:"relative",zIndex:1,padding:"24px 22px 20px"}}>
-                <div style={{color:T.su,fontSize:"9px",fontWeight:800,textTransform:"uppercase",letterSpacing:"2.5px",marginBottom:"14px",display:"flex",alignItems:"center",gap:"8px"}}>
-                  <span style={{width:"18px",height:"18px",borderRadius:"6px",background:A.main+"22",border:"1px solid "+A.main+"33",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:"10px"}}>💰</span>
-                  {t("balance")}
-                </div>
-                <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:"12px"}}>
+            <div style={{borderRadius:"28px",marginBottom:"20px",overflow:"hidden",position:"relative",animation:"fadeIn 0.35s cubic-bezier(.16,1,.3,1)",background:"linear-gradient(135deg,"+A.main+"28,"+A.dark+"18)",border:"1.5px solid "+A.main+"44",boxShadow:"0 12px 40px "+A.glow+"44"}}>
+              <div style={{height:"3px",background:"linear-gradient(90deg,"+A.main+","+A.dark+","+A.main+")",backgroundSize:"200% 100%",animation:"shimmer 2s linear infinite"}}/>
+              <div style={{position:"absolute",top:"-50px",right:"-50px",width:"200px",height:"200px",borderRadius:"50%",background:A.glow,filter:"blur(70px)",opacity:0.45,pointerEvents:"none"}}/>
+              <div style={{position:"absolute",bottom:"-40px",left:"-30px",width:"150px",height:"150px",borderRadius:"50%",background:A.glow,filter:"blur(60px)",opacity:0.2,pointerEvents:"none"}}/>
+              <div style={{position:"relative",zIndex:1,padding:"22px 22px 18px"}}>
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px",marginBottom:"18px"}}>
                   <div>
-                    <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
-                      <div style={{color:T.tx,fontWeight:900,fontSize:"48px",lineHeight:1,letterSpacing:"-3px",fontFamily:"'Syne',sans-serif"}}>{straps}</div>
-                      <div style={{color:A.main,fontSize:"14px",fontWeight:800,marginBottom:"6px"}}>st.</div>
+                    <div style={{color:T.mu,fontSize:"10px",fontWeight:800,letterSpacing:"2px",textTransform:"uppercase",marginBottom:"10px",display:"flex",alignItems:"center",gap:"7px"}}>
+                      <span style={{width:"20px",height:"20px",borderRadius:"7px",background:A.main+"33",border:"1px solid "+A.main+"44",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:"11px"}}>💰</span>
+                      МОЙ БАЛАНС
                     </div>
-                    <div style={{color:T.mu,fontSize:"11px",fontWeight:500,marginTop:"4px"}}>Straps — внутренняя валюта</div>
+                    <div style={{display:"flex",alignItems:"baseline",gap:"5px"}}>
+                      <span style={{color:T.tx,fontWeight:900,fontSize:"52px",lineHeight:1,letterSpacing:"-3px",fontFamily:"'Syne',sans-serif"}}>{straps}</span>
+                      <span style={{color:A.main,fontSize:"16px",fontWeight:800,marginBottom:"4px"}}>st.</span>
+                    </div>
+                    <div style={{color:T.mu,fontSize:"11px",fontWeight:500,marginTop:"4px"}}>Straps · внутренняя валюта</div>
                   </div>
-                  <button onClick={()=>{toast("🚧 Пополнение временно недоступно");playClick();}} className="gb"
-                    style={{padding:"13px 22px",fontSize:"13px",borderRadius:"16px",flexShrink:0,letterSpacing:"0.2px",opacity:0.6}}>
+                  <button onClick={()=>{toast("🚧 Пополнение временно недоступно");playClick();}}
+                    style={{background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"none",borderRadius:"16px",padding:"12px 20px",color:"#fff",fontSize:"13px",fontWeight:800,cursor:"pointer",flexShrink:0,boxShadow:"0 6px 20px "+A.glow+"66",opacity:0.7,marginTop:"4px"}}>
                     + Пополнить
                   </button>
                 </div>
-                {/* Progress bar decorative */}
-                <div style={{marginTop:"18px",height:"2px",background:T.bo,borderRadius:"2px",overflow:"hidden"}}>
-                  <div style={{height:"100%",width:Math.min(straps/100*100,100)+"%",background:"linear-gradient(90deg,"+A.main+","+A.dark+")",borderRadius:"2px",transition:"width 0.6s cubic-bezier(.16,1,.3,1)"}}/>
+                <div style={{background:"rgba(0,0,0,0.12)",borderRadius:"12px",overflow:"hidden",height:"6px",marginBottom:"8px"}}>
+                  <div style={{height:"100%",width:Math.min((straps%100)/100*100,100)+"%",background:"linear-gradient(90deg,"+A.main+","+A.dark+")",borderRadius:"12px",transition:"width 0.8s cubic-bezier(.16,1,.3,1)",boxShadow:"0 0 12px "+A.glow}}/>
                 </div>
-                <div style={{display:"flex",justifyContent:"space-between",marginTop:"6px"}}>
-                  <span style={{color:T.mu,fontSize:"10px",fontWeight:500}}>{straps} из 100 до след. уровня</span>
-                  <span style={{color:A.main,fontSize:"10px",fontWeight:700}}>Lvl 1</span>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{color:T.mu,fontSize:"10px",fontWeight:600}}>{straps%100}/100 до следующего уровня</span>
+                  <span style={{color:A.main,fontSize:"10px",fontWeight:800,background:A.main+"18",padding:"2px 8px",borderRadius:"20px",border:"1px solid "+A.main+"33"}}>Lvl {Math.floor(straps/100)+1}</span>
                 </div>
               </div>
             </div>
 
             {/* ── PROMO CODE ── */}
-            <PromoCode T={T} A={A} onTitleUnlocked={unlockTitle}/>
+            <PromoCode T={T} A={A} onTitleUnlocked={unlockTitle} onGiftUnlocked={g=>{setGifts(prev=>[...prev,g]);toast("🎁 Получен подарок: "+g.name+"!");fbSaveAccount({...user,straps,gifts:[...gifts,g],unlockedTitles,activeTitle,prem});}}/>
+
+            {/* ── РУЛЕТКА ── */}
+            {(()=>{
+              const now = new Date();
+              const mskOffset = 3*60, localOffset = -now.getTimezoneOffset();
+              const mskNow = new Date(now.getTime()+(mskOffset-localOffset)*60000);
+              const todayKey = mskNow.toISOString().slice(0,10);
+              const lastSpin = localStorage.getItem("metik_roulette_"+(user?.username||""));
+              const canSpin = lastSpin !== todayKey;
+              const nextSpin = new Date(mskNow);
+              nextSpin.setDate(nextSpin.getDate()+(canSpin?0:1));
+              nextSpin.setHours(10,0,0,0);
+              const msLeft = nextSpin-mskNow;
+              const hLeft = Math.floor(msLeft/3600000);
+              const mLeft = Math.floor((msLeft%3600000)/60000);
+              const DRUM = ["🎲","✨","💎","🎲","🎲","✨","🎲","💵","🎲","✨","🎲","🎲","✨","💎","🎲","✨","🎲","💵","🎲","✨"];
+
+              function spin() {
+                if(!canSpin||rouletteSpinning) return;
+                setRouletteSpinning(true); setRouletteResult(null);
+                setTimeout(()=>{
+                  const r=Math.random()*100;
+                  let prize,label,emoji,strapsAmt=0;
+                  if(r<2){prize="100руб";label="100 рублей!";emoji="💵";strapsAmt=0;}
+                  else if(r<10){prize="10st";label="10 страпсов!";emoji="💎";strapsAmt=10;}
+                  else if(r<25){prize="2st";label="2 страпса";emoji="✨";strapsAmt=2;}
+                  else{prize="1st";label="1 страпс";emoji="🎲";strapsAmt=1;}
+                  if(strapsAmt>0) setStraps(s=>s+strapsAmt);
+                  setRouletteResult({prize,label,emoji,strapsAmt});
+                  setRouletteSpinning(false);
+                  localStorage.setItem("metik_roulette_"+(user?.username||""),todayKey);
+                  toast("🎰 "+label);
+                },3000);
+              }
+
+              return (
+                <div style={{borderRadius:"28px",marginBottom:"20px",overflow:"hidden",position:"relative",animation:"fadeIn 0.4s cubic-bezier(.16,1,.3,1)"}}>
+                  {/* Dark bg */}
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(160deg,#1a0533,#0d0d1a,#001a0d)",borderRadius:"28px"}}/>
+                  {/* Glow orbs */}
+                  <div style={{position:"absolute",top:"-60px",left:"50%",transform:"translateX(-50%)",width:"280px",height:"160px",background:"radial-gradient(ellipse,"+A.main+"88 0%,transparent 70%)",pointerEvents:"none"}}/>
+                  <div style={{position:"absolute",bottom:"-40px",left:"-40px",width:"180px",height:"180px",borderRadius:"50%",background:"#22C55E44",filter:"blur(60px)",opacity:rouletteSpinning?0.8:0.3,transition:"opacity 0.5s",pointerEvents:"none"}}/>
+                  <div style={{position:"absolute",bottom:"-40px",right:"-40px",width:"180px",height:"180px",borderRadius:"50%",background:A.main+"44",filter:"blur(60px)",opacity:rouletteSpinning?0.8:0.3,transition:"opacity 0.5s",pointerEvents:"none"}}/>
+                  <div style={{border:"1.5px solid rgba(255,255,255,0.08)",borderRadius:"28px",position:"relative",zIndex:1,overflow:"hidden"}}>
+                    {/* Top gold line */}
+                    <div style={{height:"2px",background:"linear-gradient(90deg,transparent,#FFD700,#FFA500,#FFD700,transparent)"}}/>
+                    <div style={{padding:"22px 20px 20px"}}>
+                      {/* Header */}
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}}>
+                        <div>
+                          <div style={{color:"#fff",fontWeight:900,fontSize:"19px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.5px"}}>🎰 Ежедневная рулетка</div>
+                          <div style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",marginTop:"3px",fontWeight:500}}>
+                            {canSpin?"Испытай удачу!":"⏳ Через "+hLeft+"ч "+mLeft+"м"}
+                          </div>
+                        </div>
+                        {canSpin&&!rouletteSpinning&&!rouletteResult&&(
+                          <div style={{display:"flex",alignItems:"center",gap:"5px",background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.35)",borderRadius:"20px",padding:"5px 12px"}}>
+                            <span style={{width:"6px",height:"6px",borderRadius:"50%",background:"#22C55E",display:"inline-block",boxShadow:"0 0 6px #22C55E",animation:"ringPulse 1.5s infinite"}}/>
+                            <span style={{color:"#22C55E",fontSize:"10px",fontWeight:800}}>Доступно</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Барабан */}
+                      <div style={{marginBottom:"20px",position:"relative"}}>
+                        {/* spotlight beam */}
+                        <div style={{position:"absolute",top:"-20px",left:"50%",transform:"translateX(-50%)",width:"220px",height:"80px",background:"radial-gradient(ellipse,"+A.main+(rouletteSpinning?"77":"22")+" 0%,transparent 70%)",pointerEvents:"none",transition:"background 0.5s"}}/>
+                        <div style={{
+                          height:"130px",borderRadius:"20px",overflow:"hidden",position:"relative",
+                          background:"rgba(0,0,0,0.55)",
+                          border:"2px solid "+(rouletteSpinning?"rgba(255,215,0,0.6)":rouletteResult?"rgba(255,215,0,0.9)":"rgba(255,255,255,0.1)"),
+                          boxShadow:rouletteResult?"0 0 30px rgba(255,215,0,0.4),inset 0 0 30px rgba(255,215,0,0.05)":rouletteSpinning?"0 0 20px "+A.glow+"88,inset 0 0 20px "+A.glow+"22":"inset 0 0 20px rgba(0,0,0,0.3)",
+                          transition:"all 0.4s"
+                        }}>
+                          {/* top/bottom fade */}
+                          <div style={{position:"absolute",top:0,left:0,right:0,height:"40px",background:"linear-gradient(to bottom,rgba(0,0,0,0.85),transparent)",zIndex:2,pointerEvents:"none"}}/>
+                          <div style={{position:"absolute",bottom:0,left:0,right:0,height:"40px",background:"linear-gradient(to top,rgba(0,0,0,0.85),transparent)",zIndex:2,pointerEvents:"none"}}/>
+                          {/* selector lines */}
+                          <div style={{position:"absolute",top:"calc(50% - 30px)",left:"5%",right:"5%",height:"1.5px",background:rouletteResult?"rgba(255,215,0,0.9)":rouletteSpinning?"rgba(255,215,0,0.5)":"rgba(255,255,255,0.12)",zIndex:3,borderRadius:"2px",transition:"background 0.3s"}}/>
+                          <div style={{position:"absolute",top:"calc(50% + 28px)",left:"5%",right:"5%",height:"1.5px",background:rouletteResult?"rgba(255,215,0,0.9)":rouletteSpinning?"rgba(255,215,0,0.5)":"rgba(255,255,255,0.12)",zIndex:3,borderRadius:"2px",transition:"background 0.3s"}}/>
+                          {/* center glow when result */}
+                          {rouletteResult&&<div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at center,rgba(255,215,0,0.08) 0%,transparent 70%)",zIndex:1,pointerEvents:"none"}}/>}
+                          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",zIndex:4}}>
+                            {rouletteSpinning
+                              ? <span style={{fontSize:"62px",animation:"spinDrum 0.09s linear infinite"}}>{DRUM[drumIdx%DRUM.length]}</span>
+                              : rouletteResult
+                                ? <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",animation:"scaleIn 0.45s cubic-bezier(.16,1,.3,1)"}}>
+                                    <span style={{fontSize:"58px",filter:"drop-shadow(0 0 16px rgba(255,215,0,0.8))"}}>{rouletteResult.emoji}</span>
+                                  </div>
+                                : <span style={{fontSize:"58px",opacity:0.2}}>🎰</span>
+                            }
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Result */}
+                      {rouletteResult&&(
+                        <div style={{textAlign:"center",marginBottom:"16px",animation:"fadeIn 0.4s cubic-bezier(.16,1,.3,1)"}}>
+                          <div style={{color:"#FFD700",fontWeight:900,fontSize:"18px",fontFamily:"'Syne',sans-serif",textShadow:"0 0 20px rgba(255,215,0,0.6)"}}>{rouletteResult.label}</div>
+                          {rouletteResult.prize==="100руб"&&(
+                            <div style={{color:"#22C55E",fontSize:"12px",fontWeight:700,marginTop:"6px",background:"rgba(34,197,94,0.12)",display:"inline-block",padding:"4px 14px",borderRadius:"20px",border:"1px solid rgba(34,197,94,0.3)"}}>Напиши <b>@metik</b> для получения!</div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Spin button */}
+                      <button onClick={spin} disabled={!canSpin||rouletteSpinning}
+                        style={{width:"100%",padding:"16px",borderRadius:"16px",border:"none",
+                          cursor:canSpin&&!rouletteSpinning?"pointer":"not-allowed",
+                          background:canSpin&&!rouletteSpinning
+                            ?"linear-gradient(135deg,#FFD700,#F59E0B,#D97706)"
+                            :"rgba(255,255,255,0.06)",
+                          color:canSpin&&!rouletteSpinning?"#000":"rgba(255,255,255,0.3)",
+                          fontSize:"15px",fontWeight:900,
+                          boxShadow:canSpin&&!rouletteSpinning?"0 8px 28px rgba(245,158,11,0.5),0 0 0 1px rgba(255,215,0,0.3)":"none",
+                          opacity:!canSpin?0.5:1,
+                          transition:"all 0.2s",fontFamily:"'Syne',sans-serif",letterSpacing:"0.5px",
+                          transform:rouletteSpinning?"scale(0.97)":"scale(1)"}}>
+                        {rouletteSpinning?"⏳ Крутим...":rouletteResult?"✅ Сыграно сегодня":!canSpin?"🕙 Завтра в 10:00 МСК":"🎰 КРУТИТЬ!"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ── SHOP HEADER ── */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px",padding:"0 2px"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px",padding:"0 2px"}}>
               <div>
-                <div style={{color:T.tx,fontWeight:800,fontSize:"18px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.5px"}}>{t("shop")}</div>
-                <div style={{color:T.mu,fontSize:"11px",fontWeight:500,marginTop:"2px"}}>{totalBoughtBalloon + totalBoughtApple} {t("bought")}</div>
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:"6px",background:T.ca,border:"1px solid "+T.caB,borderRadius:"12px",padding:"6px 12px"}}>
-                <span style={{fontSize:"14px"}}>🛍️</span>
-                <span style={{color:T.su,fontSize:"12px",fontWeight:600}}>Магазин</span>
+                <div style={{color:T.tx,fontWeight:900,fontSize:"20px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.5px",display:"flex",alignItems:"center",gap:"8px"}}>
+                  <span style={{fontSize:"22px"}}>🛍️</span> Магазин
+                </div>
+                <div style={{color:T.mu,fontSize:"11px",fontWeight:500,marginTop:"3px"}}>Подарки для друзей · {totalBoughtBalloon+totalBoughtApple} куплено</div>
               </div>
             </div>
 
@@ -3568,59 +4319,63 @@ function App() {
 
               {/* Balloon */}
               <div onClick={()=>setGModal("balloon")}
-                style={{cursor:"pointer",background:T.pa,border:"1.5px solid "+T.bo,borderRadius:"24px",
-                  padding:"0",position:"relative",overflow:"hidden",transition:"all 0.25s cubic-bezier(.16,1,.3,1)",
-                  animation:"scaleIn 0.3s cubic-bezier(.16,1,.3,1) both"}}
-                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-6px) scale(1.02)";e.currentTarget.style.borderColor=A.main+"66";e.currentTarget.style.boxShadow="0 20px 50px "+A.glow+"55";}}
-                onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.borderColor=T.bo;e.currentTarget.style.boxShadow="";}}>
-                {/* Top gradient bar */}
+                style={{cursor:"pointer",borderRadius:"24px",padding:"0",position:"relative",overflow:"hidden",
+                  transition:"all 0.25s cubic-bezier(.16,1,.3,1)",animation:"scaleIn 0.3s cubic-bezier(.16,1,.3,1) both",
+                  background:"linear-gradient(160deg,"+A.main+"28,"+A.dark+"14,"+T.pa+")",
+                  border:"1.5px solid "+A.main+"33",
+                  boxShadow:"0 4px 20px "+A.glow+"22"}}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-8px) scale(1.02)";e.currentTarget.style.borderColor=A.main+"88";e.currentTarget.style.boxShadow="0 20px 50px "+A.glow+"55";}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.borderColor=A.main+"33";e.currentTarget.style.boxShadow="0 4px 20px "+A.glow+"22";}}>
                 <div style={{height:"3px",background:"linear-gradient(90deg,"+A.main+","+A.dark+")"}}/>
-                {/* Stock badge */}
                 <div style={{position:"absolute",top:"14px",right:"12px",zIndex:2}}>
-                  {totalBoughtBalloon >= BALLOON_LIMIT
-                    ? <span style={{background:"rgba(239,68,68,0.18)",color:"#F87171",fontSize:"9px",fontWeight:800,padding:"3px 8px",borderRadius:"8px",border:"1px solid rgba(239,68,68,0.3)"}}>🚫</span>
-                    : <span style={{background:"#22C55E14",color:"#22C55E",fontSize:"9px",fontWeight:800,padding:"3px 8px",borderRadius:"8px",border:"1px solid #22C55E28"}}>{BALLOON_LIMIT - totalBoughtBalloon}</span>
+                  {totalBoughtBalloon>=BALLOON_LIMIT
+                    ?<span style={{background:"rgba(239,68,68,0.18)",color:"#F87171",fontSize:"9px",fontWeight:800,padding:"3px 8px",borderRadius:"8px",border:"1px solid rgba(239,68,68,0.3)"}}>Лимит</span>
+                    :<span style={{background:A.main+"18",color:A.main,fontSize:"9px",fontWeight:800,padding:"3px 8px",borderRadius:"8px",border:"1px solid "+A.main+"33"}}>{BALLOON_LIMIT-totalBoughtBalloon} шт.</span>
                   }
                 </div>
-                <div style={{padding:"20px 16px 18px",textAlign:"center"}}>
-                  <div style={{fontSize:"52px",marginBottom:"12px",filter:"drop-shadow(0 8px 20px "+A.glow+"88)",display:"block",animation:"float 4s ease-in-out infinite"}}>🎈</div>
-                  <div style={{color:T.tx,fontWeight:800,fontSize:"15px",marginBottom:"4px",fontFamily:"'Syne',sans-serif"}}>Шарик</div>
-                  <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:"linear-gradient(135deg,"+A.main+"22,"+A.dark+"14)",borderRadius:"10px",padding:"4px 12px",border:"1px solid "+A.main+"28",marginBottom:"14px"}}>
-                    <span style={{color:A.main,fontWeight:900,fontSize:"16px"}}>5</span>
-                    <span style={{color:T.mu,fontSize:"11px",fontWeight:600}}>st.</span>
+                <div style={{position:"absolute",top:"-30px",left:"-20px",width:"100px",height:"100px",borderRadius:"50%",background:A.glow,filter:"blur(40px)",opacity:0.35,pointerEvents:"none"}}/>
+                <div style={{padding:"22px 16px 18px",textAlign:"center",position:"relative"}}>
+                  <div style={{fontSize:"56px",marginBottom:"10px",filter:"drop-shadow(0 8px 20px "+A.glow+"99)",display:"block",animation:"float 4s ease-in-out infinite"}}>🎈</div>
+                  <div style={{color:T.tx,fontWeight:900,fontSize:"16px",marginBottom:"8px",fontFamily:"'Syne',sans-serif"}}>Шарик</div>
+                  <div style={{display:"inline-flex",alignItems:"center",gap:"5px",background:"linear-gradient(135deg,"+A.main+"33,"+A.dark+"22)",borderRadius:"12px",padding:"5px 14px",border:"1px solid "+A.main+"44",marginBottom:"14px",boxShadow:"0 4px 12px "+A.glow+"33"}}>
+                    <span style={{color:A.main,fontWeight:900,fontSize:"18px"}}>5</span>
+                    <span style={{color:T.mu,fontSize:"12px",fontWeight:700}}>st.</span>
                   </div>
-                  <div style={{height:"3px",background:T.bo,borderRadius:"3px",overflow:"hidden"}}>
-                    <div style={{height:"100%",width:(totalBoughtBalloon/BALLOON_LIMIT*100)+"%",background:"linear-gradient(90deg,"+A.main+","+A.dark+")",borderRadius:"3px",transition:"width 0.6s"}}/>
+                  <div style={{height:"4px",background:"rgba(255,255,255,0.06)",borderRadius:"4px",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:(totalBoughtBalloon/BALLOON_LIMIT*100)+"%",background:"linear-gradient(90deg,"+A.main+","+A.dark+")",borderRadius:"4px",transition:"width 0.6s",boxShadow:"0 0 8px "+A.glow}}/>
                   </div>
-                  <div style={{color:T.mu,fontSize:"9px",fontWeight:600,marginTop:"5px"}}>{totalBoughtBalloon}/{BALLOON_LIMIT}</div>
+                  <div style={{color:T.mu,fontSize:"10px",fontWeight:600,marginTop:"6px"}}>{totalBoughtBalloon} / {BALLOON_LIMIT}</div>
                 </div>
               </div>
 
               {/* Apple */}
               <div onClick={()=>setGModal("apple")}
-                style={{cursor:"pointer",background:T.pa,border:"1.5px solid "+T.bo,borderRadius:"24px",
-                  padding:"0",position:"relative",overflow:"hidden",transition:"all 0.25s cubic-bezier(.16,1,.3,1)",
-                  animation:"scaleIn 0.3s cubic-bezier(.16,1,.3,1) 0.06s both"}}
-                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-6px) scale(1.02)";e.currentTarget.style.borderColor="#22C55E66";e.currentTarget.style.boxShadow="0 20px 50px rgba(34,197,94,0.35)";}}
-                onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.borderColor=T.bo;e.currentTarget.style.boxShadow="";}}>
+                style={{cursor:"pointer",borderRadius:"24px",padding:"0",position:"relative",overflow:"hidden",
+                  transition:"all 0.25s cubic-bezier(.16,1,.3,1)",animation:"scaleIn 0.3s cubic-bezier(.16,1,.3,1) 0.06s both",
+                  background:"linear-gradient(160deg,rgba(34,197,94,0.18),rgba(22,163,74,0.08),"+T.pa+")",
+                  border:"1.5px solid rgba(34,197,94,0.3)",
+                  boxShadow:"0 4px 20px rgba(34,197,94,0.12)"}}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-8px) scale(1.02)";e.currentTarget.style.borderColor="rgba(34,197,94,0.7)";e.currentTarget.style.boxShadow="0 20px 50px rgba(34,197,94,0.35)";}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.borderColor="rgba(34,197,94,0.3)";e.currentTarget.style.boxShadow="0 4px 20px rgba(34,197,94,0.12)";}}>
                 <div style={{height:"3px",background:"linear-gradient(90deg,#22C55E,#16A34A)"}}/>
                 <div style={{position:"absolute",top:"14px",right:"12px",zIndex:2}}>
-                  {totalBoughtApple >= APPLE_LIMIT
-                    ? <span style={{background:"rgba(239,68,68,0.18)",color:"#F87171",fontSize:"9px",fontWeight:800,padding:"3px 8px",borderRadius:"8px",border:"1px solid rgba(239,68,68,0.3)"}}>🚫</span>
-                    : <span style={{background:"#22C55E14",color:"#22C55E",fontSize:"9px",fontWeight:800,padding:"3px 8px",borderRadius:"8px",border:"1px solid #22C55E28"}}>{APPLE_LIMIT - totalBoughtApple}</span>
+                  {totalBoughtApple>=APPLE_LIMIT
+                    ?<span style={{background:"rgba(239,68,68,0.18)",color:"#F87171",fontSize:"9px",fontWeight:800,padding:"3px 8px",borderRadius:"8px",border:"1px solid rgba(239,68,68,0.3)"}}>Лимит</span>
+                    :<span style={{background:"rgba(34,197,94,0.15)",color:"#22C55E",fontSize:"9px",fontWeight:800,padding:"3px 8px",borderRadius:"8px",border:"1px solid rgba(34,197,94,0.3)"}}>{APPLE_LIMIT-totalBoughtApple} шт.</span>
                   }
                 </div>
-                <div style={{padding:"20px 16px 18px",textAlign:"center"}}>
-                  <div style={{fontSize:"52px",marginBottom:"12px",filter:"drop-shadow(0 8px 20px rgba(34,197,94,0.5))",display:"block",animation:"float 4.5s ease-in-out infinite 0.5s"}}>🍏</div>
-                  <div style={{color:T.tx,fontWeight:800,fontSize:"15px",marginBottom:"4px",fontFamily:"'Syne',sans-serif"}}>Яблоко</div>
-                  <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:"rgba(34,197,94,0.12)",borderRadius:"10px",padding:"4px 12px",border:"1px solid rgba(34,197,94,0.22)",marginBottom:"14px"}}>
-                    <span style={{color:"#22C55E",fontWeight:900,fontSize:"16px"}}>25</span>
-                    <span style={{color:T.mu,fontSize:"11px",fontWeight:600}}>st.</span>
+                <div style={{position:"absolute",top:"-30px",left:"-20px",width:"100px",height:"100px",borderRadius:"50%",background:"#22C55E44",filter:"blur(40px)",opacity:0.5,pointerEvents:"none"}}/>
+                <div style={{padding:"22px 16px 18px",textAlign:"center",position:"relative"}}>
+                  <div style={{fontSize:"56px",marginBottom:"10px",filter:"drop-shadow(0 8px 20px rgba(34,197,94,0.6))",display:"block",animation:"float 4.5s ease-in-out infinite 0.5s"}}>🍏</div>
+                  <div style={{color:T.tx,fontWeight:900,fontSize:"16px",marginBottom:"8px",fontFamily:"'Syne',sans-serif"}}>Яблоко</div>
+                  <div style={{display:"inline-flex",alignItems:"center",gap:"5px",background:"rgba(34,197,94,0.18)",borderRadius:"12px",padding:"5px 14px",border:"1px solid rgba(34,197,94,0.35)",marginBottom:"14px",boxShadow:"0 4px 12px rgba(34,197,94,0.2)"}}>
+                    <span style={{color:"#22C55E",fontWeight:900,fontSize:"18px"}}>25</span>
+                    <span style={{color:T.mu,fontSize:"12px",fontWeight:700}}>st.</span>
                   </div>
-                  <div style={{height:"3px",background:T.bo,borderRadius:"3px",overflow:"hidden"}}>
-                    <div style={{height:"100%",width:(totalBoughtApple/APPLE_LIMIT*100)+"%",background:"linear-gradient(90deg,#22C55E,#16A34A)",borderRadius:"3px",transition:"width 0.6s"}}/>
+                  <div style={{height:"4px",background:"rgba(255,255,255,0.06)",borderRadius:"4px",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:(totalBoughtApple/APPLE_LIMIT*100)+"%",background:"linear-gradient(90deg,#22C55E,#16A34A)",borderRadius:"4px",transition:"width 0.6s",boxShadow:"0 0 8px rgba(34,197,94,0.6)"}}/>
                   </div>
-                  <div style={{color:T.mu,fontSize:"9px",fontWeight:600,marginTop:"5px"}}>{totalBoughtApple}/{APPLE_LIMIT}</div>
+                  <div style={{color:T.mu,fontSize:"10px",fontWeight:600,marginTop:"6px"}}>{totalBoughtApple} / {APPLE_LIMIT}</div>
                 </div>
               </div>
             </div>
@@ -3945,12 +4700,38 @@ function App() {
               </button>
               {sPage==="notifs" && <>
                 <div className="card" style={{marginBottom:"12px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"15px 17px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"15px 17px",borderBottom:"1px solid "+T.bo+"44"}}>
                     <div style={{width:"38px",height:"38px",borderRadius:"12px",background:nOn?A.main+"18":"rgba(120,120,120,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",flexShrink:0}}>{nOn?"🔔":"🔕"}</div>
                     <div style={{flex:1}}><div style={{color:T.tx,fontSize:"13px",fontWeight:700}}>{t("notifs")}</div><div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>{nOn?t("notifsOn"):t("notifsOff")}</div></div>
                     <div className="tt" onClick={()=>setNOn(v=>!v)} style={{background:nOn?"linear-gradient(135deg,"+A.main+","+A.dark+")":"rgba(130,130,130,0.22)"}}>
                       <div className="tt-t" style={{transform:nOn?"translateX(22px)":"translateX(0)"}}/>
                     </div>
+                  </div>
+                  {/* Push уведомления */}
+                  <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"15px 17px"}}>
+                    <div style={{width:"38px",height:"38px",borderRadius:"12px",background:"#F59E0B18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",flexShrink:0}}>📲</div>
+                    <div style={{flex:1}}>
+                      <div style={{color:T.tx,fontSize:"13px",fontWeight:700}}>Push-уведомления</div>
+                      <div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>
+                        {typeof Notification==="undefined"?"Не поддерживается браузером"
+                          :Notification.permission==="granted"?"✅ Разрешены"
+                          :Notification.permission==="denied"?"❌ Заблокированы (разреши в браузере)"
+                          :"Нажми чтобы включить"}
+                      </div>
+                    </div>
+                    {typeof Notification!=="undefined" && Notification.permission!=="granted" && Notification.permission!=="denied" && (
+                      <button onClick={()=>{
+                        Notification.requestPermission().then(p=>{
+                          if(p==="granted") toast("✅ Push-уведомления включены!");
+                          else toast("❌ Разрешение отклонено");
+                        });
+                      }} style={{background:"linear-gradient(135deg,#F59E0B,#D97706)",color:"#fff",border:"none",borderRadius:"12px",padding:"8px 14px",fontSize:"12px",fontWeight:700,cursor:"pointer",flexShrink:0,boxShadow:"0 4px 14px rgba(245,158,11,0.4)"}}>
+                        Включить
+                      </button>
+                    )}
+                    {typeof Notification!=="undefined" && Notification.permission==="granted" && (
+                      <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#22C55E",boxShadow:"0 0 8px #22C55E88",flexShrink:0}}/>
+                    )}
                   </div>
                 </div>
               </>}
@@ -4080,14 +4861,19 @@ function App() {
                     ? <><span style={{width:"7px",height:"7px",borderRadius:"50%",background:A.main,boxShadow:"0 0 7px "+A.glow}}/><span style={{color:A.main}}>{aiLoading?t("typing"):t("aiAssistant")}</span></>
                     : blockedContacts.includes(chatId)
                       ? <><span style={{width:"7px",height:"7px",borderRadius:"50%",background:"#F87171"}}/><span style={{color:"#F87171",fontSize:"12px",fontWeight:600,marginLeft:"4px"}}>Заблокирован</span></>
-                      : <><span style={{width:"7px",height:"7px",borderRadius:"50%",background:"#22C55E",boxShadow:"0 0 8px #22C55E88"}}/><span style={{color:"#22C55E",fontSize:"12px",fontWeight:600,marginLeft:"4px"}}>{t("onlineStatus")}</span></>
+                      : (()=>{
+                          const ls = lastSeenCache[activeChat.username] || 0;
+                          const on = isOnline(ls);
+                          const lbl = onlineLabel(ls);
+                          return <><span style={{width:"7px",height:"7px",borderRadius:"50%",background:on?"#22C55E":"#64748B",boxShadow:on?"0 0 8px #22C55E88":"none",flexShrink:0}}/><span style={{color:on?"#22C55E":T.mu,fontSize:"12px",fontWeight:600,marginLeft:"4px"}}>{lbl}</span></>;
+                        })()
                 }
               </div>
             </div>
             {/* Call buttons + three dots — only for DMs and AI, not channels */}
             {!activeChat.isChannel && (
               <div style={{display:"flex",alignItems:"center",gap:"2px"}}>
-                <button className="ib" onClick={()=>toast("📞 Голосовые звонки — скоро!")}
+                <button className="ib" onClick={()=>{ if(!activeChat.isAI && activeChat.username) startCall(activeChat); else toast("📞 Нельзя позвонить боту"); }}
                   style={{width:"40px",height:"40px",color:T.su,flexShrink:0}}
                   onMouseEnter={e=>{e.currentTarget.style.background=T.caH;e.currentTarget.style.color=A.main;}}
                   onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=T.su;}}>
@@ -4130,7 +4916,7 @@ function App() {
                       </button>
                     )}
                     {!blockedContacts.includes(chatId) && <>
-                      <button onClick={()=>{setChats(c=>c.map(x=>x.id===chatId?{...x,messages:[]}:x));setChatMenuOpen(false);toast("🗑️ Чат очищен");}}
+                      <button onClick={()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:[]}:x));setChatMenuOpen(false);toast("🗑️ Чат очищен");}}
                         style={{display:"flex",alignItems:"center",gap:"13px",width:"100%",padding:"14px 16px",background:"none",border:"none",cursor:"pointer",color:T.tx,fontSize:"13.5px",fontWeight:600,fontFamily:"inherit",transition:"background 0.15s",borderBottom:"1px solid "+T.bo+"28"}}
                         onMouseEnter={e=>e.currentTarget.style.background=T.caH}
                         onMouseLeave={e=>e.currentTarget.style.background="none"}>
@@ -4174,7 +4960,7 @@ function App() {
                         <div key={g.id} onClick={()=>{
                           const sentGift = {id:"sg"+Date.now(), emoji:g.emoji, name:g.name, price:g.price, sentAt:Date.now(), from:user.username};
                           // Добавляем сообщение И сохраняем подарок в самом чате
-                          setChats(c=>c.map(x=>x.id===chatId?{
+                          setChats(c=>c.map(x=>String(x.id)===String(chatId)?{
                             ...x,
                             profileGifts:[...(x.profileGifts||[]),sentGift],
                             messages:[...x.messages,{id:Date.now(),from:"me",text:"",fileType:"sticker",emoji:g.emoji,stickerLabel:g.name,time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}),isGift:true,giftName:g.name,giftEmoji:g.emoji}],
@@ -4320,10 +5106,10 @@ function App() {
                   {icon:"⎘",label:"Копировать",color:T.tx,accent:false,fn:()=>{navigator.clipboard&&navigator.clipboard.writeText(mm.msg.text||"");toast("📋 Скопировано");setMsgMenu(null);}},
                   {icon:"↗",label:"Переслать",color:T.tx,accent:false,fn:()=>{toast("↪️ Скоро!");setMsgMenu(null);}},
                   ...(mm.msg.from==="me"?[
-                    {icon:"✕",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>x.id===chatId?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
-                    {icon:"✕",label:"Удалить у всех",color:"#EF4444",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>x.id===chatId?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено у всех");}},
+                    {icon:"✕",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
+                    {icon:"✕",label:"Удалить у всех",color:"#EF4444",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено у всех");}},
                   ]:[
-                    {icon:"✕",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>x.id===chatId?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
+                    {icon:"✕",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
                   ])
                 ].map((it,i,arr)=>(
                   <button key={i} onClick={it.fn}
