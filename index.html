@@ -270,16 +270,17 @@ const TH = {
     b2:"rgba(255,100,0,0.14)", b2B:"rgba(255,100,0,0.30)", b2T:"#FFE6CC",
     msg:"rgba(255,100,0,0.10)", msgB:"rgba(255,100,0,0.08)",
   },
-  rainbow: { id:"rainbow", label:"RAINBOW", icon:"", pr:true,
+  rainbow: { id:"rainbow", label:"RAINBOW", icon:"🌈", pr:true,
     bg:"#080010", pa:"#0f0020", pa2:"#160030",
-    bo:"rgba(255,100,200,0.3)", tx:"#FFFFFF", su:"rgba(255,255,255,0.95)", mu:"rgba(255,255,255,0.55)",
-    in:"rgba(255,255,255,0.07)", inB:"rgba(255,150,255,0.3)", inF:"rgba(255,255,255,0.12)",
-    ca:"rgba(255,255,255,0.05)", caB:"rgba(255,100,200,0.25)", caH:"rgba(255,255,255,0.10)",
-    sb:"#060010", bu:"rgba(255,255,255,0.1)", buT:"#FFFFFF",
-    aG:"linear-gradient(135deg,#1a0030 0%,#000d1a 25%,#001a00 50%,#1a1a00 75%,#1a0030 100%)",
-    aC:"rgba(8,0,16,0.95)", aCB:"rgba(255,100,200,0.35)",
-    b2:"rgba(255,255,255,0.08)", b2B:"rgba(255,100,200,0.3)", b2T:"#FFFFFF",
+    bo:"rgba(255,100,200,0.35)", tx:"#FFFFFF", su:"rgba(255,255,255,0.95)", mu:"rgba(255,255,255,0.55)",
+    in:"rgba(255,255,255,0.08)", inB:"rgba(255,150,255,0.35)", inF:"rgba(255,255,255,0.13)",
+    ca:"rgba(255,255,255,0.06)", caB:"rgba(255,100,200,0.3)", caH:"rgba(255,255,255,0.11)",
+    sb:"#06000e", bu:"rgba(255,255,255,0.1)", buT:"#FFFFFF",
+    aG:"radial-gradient(ellipse 160% 120% at 10% -10%, #2a0050 0%, #000820 50%, #080010 100%)",
+    aC:"rgba(8,0,16,0.95)", aCB:"rgba(255,100,200,0.4)",
+    b2:"rgba(255,255,255,0.08)", b2B:"rgba(255,100,200,0.35)", b2T:"#FFFFFF",
     msg:"rgba(255,100,200,0.1)", msgB:"rgba(100,200,255,0.08)",
+    id:"rainbow",
   },
 };
 
@@ -310,7 +311,7 @@ const UCOLORS = ["#6366F1","#EC4899","#10B981","#F97316","#8B5CF6","#06B6D4","#F
 const INIT_CHATS = [
   { id:1, name:"METIKENGER News", avatar:"📡", color:"#6366F1",
     channelId:"metikengernews", desc:"Официальный канал METIKENGER. Новости, обновления и анонсы.", isOwned:false,
-    lastMsg:"Добро пожаловать в v2.0 Secure! 🔒", time:"сейчас", unread:3, isChannel:true, isAI:false,
+    lastMsg:"Добро пожаловать в v2.0 Secure! 🔒", time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}), unread:3, isChannel:true, isAI:false,
     messages:[
       { id:1, from:"them", text:"📡 Добро пожаловать в METIKENGER v2.0 Secure!", time:"10:00" },
       { id:2, from:"them", text:"🔒 Новая система безопасности: PBKDF2, соль, rate limiting, anti-XSS, anti-clickjacking!", time:"10:01" },
@@ -330,6 +331,7 @@ const INIT_CHATS = [
 function buildCSS(T,A,F) {
   return `
 :root{--ac:${A.main};--ac-dark:${A.dark};--glow:${A.glow};--ac-30:${A.main}30;--tx:${T.tx};--pa:${T.pa};}
+${T.id==="rainbow"?`:root{--ac:#FF0050;--ac-dark:#AA00FF;--glow:rgba(255,0,80,0.5);--ac-30:rgba(255,0,80,0.3);}`:""}
 *{font-family:${F.css};}
 .cr{cursor:pointer;transition:all 0.18s;border-bottom:1px solid ${T.bo}33;}
 .cr:hover{background:${T.caH};}
@@ -418,58 +420,81 @@ ${T.id==="light"?`
 ${T.id==="rainbow"?`
 @keyframes rb{0%{background-position:0% 50%;}100%{background-position:400% 50%;}}
 @keyframes rbBg{0%{background-position:0% 0%;}33%{background-position:100% 50%;}66%{background-position:50% 100%;}100%{background-position:0% 0%;}}
+@keyframes rbBgSlow{0%{background-position:0% 0%;}50%{background-position:100% 100%;}100%{background-position:0% 0%;}}
 @keyframes rbBorder{0%{border-color:#FF0050;}14%{border-color:#FF6B00;}28%{border-color:#FFD700;}42%{border-color:#00E040;}57%{border-color:#0080FF;}71%{border-color:#6600FF;}85%{border-color:#FF00AA;}100%{border-color:#FF0050;}}
 @keyframes rbGlow{0%{box-shadow:0 0 24px #FF005099,0 6px 32px #FF005055;}25%{box-shadow:0 0 24px #FFD70099,0 6px 32px #FFD70055;}50%{box-shadow:0 0 24px #00E04099,0 6px 32px #00E04055;}75%{box-shadow:0 0 24px #0080FF99,0 6px 32px #0080FF55;}100%{box-shadow:0 0 24px #FF005099,0 6px 32px #FF005055;}}
 @keyframes rbColor{0%{color:#FF0050;}14%{color:#FF8C00;}28%{color:#FFD700;}42%{color:#00E040;}57%{color:#0080FF;}71%{color:#AA00FF;}85%{color:#FF00CC;}100%{color:#FF0050;}}
 @keyframes rbShadow{0%{text-shadow:0 0 10px #FF0050;}25%{text-shadow:0 0 10px #FFD700;}50%{text-shadow:0 0 10px #00E040;}75%{text-shadow:0 0 10px #0080FF;}100%{text-shadow:0 0 10px #FF0050;}}
+@keyframes rbFade{0%,100%{opacity:0.7;}50%{opacity:1;}}
 
-/* ── ФОН ── */
-body,#root{background:linear-gradient(45deg,#1a0030,#000d20,#001a08,#1a1500,#200010,#00001a,#180030)!important;background-size:600% 600%!important;animation:rbBg 10s ease infinite!important;}
+/* ══ ФОН ══ */
+body,#root{background:linear-gradient(135deg,#1a0030,#000d20,#001a08,#1a1500,#200010,#00001a,#180030)!important;background-size:600% 600%!important;animation:rbBg 12s ease infinite!important;}
 
-/* ── ВСЕ КНОПКИ ── */
-button:not(:disabled){position:relative;}
+/* ══ ПАНЕЛИ ══ */
+.panel,.chat-view{background:linear-gradient(160deg,rgba(26,0,48,0.97),rgba(0,13,32,0.97),rgba(0,26,8,0.97),rgba(26,21,0,0.97),rgba(32,0,16,0.97))!important;background-size:400% 400%!important;animation:rbBgSlow 18s ease infinite!important;}
+
+/* ══ КНОПКИ ══ */
 .gb{background:linear-gradient(90deg,#FF0050,#FF6B00,#FFD700,#00E040,#0080FF,#AA00FF,#FF0090,#FF0050)!important;background-size:400% 100%!important;animation:rb 3s linear infinite,rbGlow 4s ease infinite!important;border:none!important;color:#fff!important;text-shadow:0 1px 8px rgba(0,0,0,0.8)!important;font-weight:800!important;}
 .gb:hover:not(:disabled){filter:brightness(1.2) saturate(1.3)!important;transform:translateY(-1px) scale(1.02)!important;}
 .gb:disabled{animation:none!important;background:#2a2a2a!important;box-shadow:none!important;opacity:0.5!important;}
-.ghs{background:linear-gradient(90deg,rgba(255,0,80,0.2),rgba(0,128,255,0.2),rgba(170,0,255,0.2),rgba(0,220,60,0.2))!important;background-size:400% 100%!important;animation:rb 4s linear infinite!important;border:1.5px solid transparent!important;color:#fff!important;animation:rb 4s linear infinite,rbBorder 3s linear infinite!important;}
+.ghs{background:linear-gradient(90deg,rgba(255,0,80,0.15),rgba(0,128,255,0.15),rgba(170,0,255,0.15),rgba(0,220,60,0.15))!important;background-size:400% 100%!important;animation:rb 4s linear infinite,rbBorder 3s linear infinite!important;border:1.5px solid transparent!important;color:#fff!important;}
+.ib:hover{animation:rbBorder 1.5s linear infinite!important;background:rgba(255,255,255,0.08)!important;}
 
-/* ── НАВБАР ── */
+/* ══ НАВБАР ══ */
 .nb.on::after{background:linear-gradient(90deg,#FF0050,#FFD700,#00E040,#0080FF,#AA00FF,#FF0050)!important;background-size:400%!important;animation:rb 2s linear infinite!important;width:32px!important;height:3px!important;border-radius:2px!important;}
-.nb{transition:all 0.2s!important;}
 .nb.on svg,.nb.on span{animation:rbColor 3s linear infinite!important;}
+.nb{background:transparent!important;}
 
-/* ── САЙДБАР ── */
+/* ══ НИЖНЯЯ НАВБАР ПАНЕЛЬ ══ */
+[class="nav-bar"],div[style*="position:\"fixed\""][style*="bottom:0"]{background:linear-gradient(90deg,rgba(20,0,35,0.98),rgba(0,8,25,0.98),rgba(0,18,6,0.98))!important;background-size:400%!important;animation:rb 12s linear infinite!important;border-top:2px solid transparent!important;animation:rb 12s linear infinite,rbBorder 3s linear infinite!important;}
+
+/* ══ САЙДБАР ══ */
 .sb.on{background:linear-gradient(90deg,rgba(255,0,80,0.2),rgba(255,150,0,0.15),rgba(0,200,80,0.15),rgba(0,120,255,0.2),rgba(150,0,255,0.2))!important;background-size:400% 100%!important;animation:rb 5s linear infinite!important;}
 
-/* ── ХЭНДЛ ШТОРКИ ── */
+/* ══ ХЭНДЛ ══ */
 .handle{background:linear-gradient(90deg,#FF0050,#FF6B00,#FFD700,#00E040,#0080FF,#AA00FF,#FF0050)!important;background-size:400%!important;animation:rb 2s linear infinite!important;opacity:1!important;height:5px!important;width:60px!important;border-radius:3px!important;}
 
-/* ── ИНПУТЫ ── */
-.mi,.pi{transition:all 0.2s!important;}
-.mi:focus,.pi:focus{border-image:linear-gradient(90deg,#FF0050,#FFD700,#00E040,#0080FF,#AA00FF) 1!important;border-color:transparent!important;box-shadow:0 0 0 2px rgba(255,0,80,0.5),0 0 20px rgba(0,128,255,0.3)!important;animation:rbGlow 2s ease infinite!important;}
-.mi{border:1.5px solid rgba(255,100,200,0.3)!important;}
+/* ══ ИНПУТЫ ══ */
+.mi,.pi,.auth-input{border:1.5px solid rgba(255,100,200,0.4)!important;background:rgba(255,255,255,0.06)!important;}
+.mi:focus,.pi:focus,.auth-input:focus{border:1.5px solid transparent!important;box-shadow:0 0 0 2px rgba(255,0,80,0.6),0 0 20px rgba(0,128,255,0.4)!important;animation:rbGlow 2s ease infinite!important;background:rgba(255,255,255,0.09)!important;outline:none!important;}
+.mi{animation:rbBorder 4s linear infinite!important;}
 
-/* ── КАРТОЧКИ ── */
+/* ══ СООБЩЕНИЯ — РАДУЖНЫЙ ФОН ══ */
+[data-msg-bubble="1"]{position:relative!important;}
+[data-msg-bubble="1"]::before{content:'';position:absolute;inset:-1.5px;border-radius:inherit;background:linear-gradient(90deg,#FF0050,#FF6B00,#FFD700,#00E040,#0080FF,#AA00FF,#FF0090,#FF0050);background-size:400% 100%;animation:rb 4s linear infinite;z-index:-1;}
+.rb-msg{
+  background:linear-gradient(90deg,rgba(255,0,80,0.85),rgba(255,107,0,0.85),rgba(255,215,0,0.85),rgba(0,224,64,0.85),rgba(0,128,255,0.85),rgba(170,0,255,0.85),rgba(255,0,144,0.85),rgba(255,0,80,0.85)) !important;
+  background-size:400% 100% !important;
+  animation:rb 3s linear infinite !important;
+  color:#fff !important;
+  text-shadow:0 1px 6px rgba(0,0,0,0.6) !important;
+  border:none !important;
+}
+.rb-msg *{color:#fff !important;text-shadow:0 1px 4px rgba(0,0,0,0.5) !important;}
+
+/* ══ КАРТОЧКИ / ТЕГИ ══ */
 .card{animation:rbBorder 5s linear infinite!important;background:rgba(255,255,255,0.03)!important;}
-
-/* ── ТЕГИ ── */
 .tag{animation:rbBorder 3s linear infinite!important;}
 
-/* ── СКРОЛЛБАР ── */
+/* ══ ТОСТ ══ */
+.toast-rb{background:linear-gradient(90deg,#FF0050,#FF6B00,#FFD700,#00E040,#0080FF,#AA00FF,#FF0050)!important;background-size:400%!important;animation:rb 3s linear infinite!important;color:#fff!important;text-shadow:0 1px 6px rgba(0,0,0,0.6)!important;font-weight:800!important;}
+
+/* ══ СКРОЛЛБАР ══ */
 ::-webkit-scrollbar{width:4px!important;}
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#FF0050,#FFD700,#00E040,#0080FF,#AA00FF)!important;border-radius:4px!important;}
 
-/* ── ЧЕКБОКСЫ / РАДИО ── */
-input[type=range]{accent-color:#FF0050!important;}
+/* ══ РАЗДЕЛИТЕЛИ ══ */
+hr,.divider{background:linear-gradient(90deg,transparent,#FF0050,#FFD700,#00E040,#0080FF,#AA00FF,transparent)!important;border:none!important;height:1px!important;animation:rb 3s linear infinite!important;background-size:400%!important;}
 
-/* ── ВСЕ ОСТАЛЬНЫЕ КНОПКИ которые не .gb и не .ghs ── */
-button:not(.gb):not(.ghs):not(.nb):not(.sb):not([style*="background:none"]):not([style*="background: none"]){
-  border-color:rgba(255,100,200,0.3)!important;
-  transition:all 0.2s!important;
-}
-button:not(.gb):not(.ghs):hover:not(:disabled){
-  animation:rbBorder 1.5s linear infinite!important;
-}
+/* ══ ПРОЧИЕ КНОПКИ ══ */
+button:not(.gb):not(.ghs):not(.nb):not(.sb):not(.ib):not([style*="background:none"]):not([style*="background: none"]){border-color:rgba(255,100,200,0.3)!important;transition:all 0.2s!important;}
+button:not(.gb):not(.ghs):not(.nb):not(.sb):not(.ib):hover:not(:disabled){animation:rbBorder 1.5s linear infinite!important;}
+
+/* ══ ХОВЕР ЧАТОВ ══ */
+.cr:hover{background:rgba(255,100,200,0.08)!important;}
+
+/* ══ АВАТАРКИ В СПИСКЕ ══ */
+[style*="border-radius:17px"],[style*="borderRadius:\"17px\""]{transition:box-shadow 0.3s!important;}
 `:""}
 ${T.id==="sunset"?`
 .gb{background:linear-gradient(135deg,#FF1A1A,#CC0000)!important;box-shadow:0 6px 24px rgba(255,0,0,0.55)!important;}
@@ -523,7 +548,7 @@ function GiftModal({ T, A, straps, setStraps, balloonCount, appleCount, setGifts
     const newGifts = Array.from({length: qty}, (_, i) => ({
       id: now + i, type: giftType, emoji, name: giftName,
       price: priceEach, acquiredAt: now, hidden: false,
-      burnDeadline: now + 14*24*60*60*1000
+      burnDeadline: now + 7*24*60*60*1000
     }));
     setStraps(s => s - totalCost);
     setGifts(g => [...g, ...newGifts]);
@@ -686,6 +711,9 @@ const PROMO_CODES = {
   "OWNER-2156":   { title:"owner",   reward:"Титул ВЛАДЕЛЕЦ" },
   "OWNER-8834":   { title:"owner",   reward:"Титул ВЛАДЕЛЕЦ" },
   "UMBRELLA-VIP": { gift:{emoji:"☂️",name:"Зонт",price:67000,type:"umbrella"}, reward:"Подарок ☂️ Зонт (67 000 st)" },
+  "NOHANDLE-4471": { once:true, gift:{emoji:"🌂",name:"Зонтик без ручки",price:67,type:"umbrella_no_handle"}, reward:"Подарок 🌂 Зонтик без ручки (67 st)" },
+  "NOHANDLE-8829": { once:true, gift:{emoji:"🌂",name:"Зонтик без ручки",price:67,type:"umbrella_no_handle"}, reward:"Подарок 🌂 Зонтик без ручки (67 st)" },
+  "NOHANDLE-3357": { once:true, gift:{emoji:"🌂",name:"Зонтик без ручки",price:67,type:"umbrella_no_handle"}, reward:"Подарок 🌂 Зонтик без ручки (67 st)" },
 };
 
 function PromoCode({ T, A, onTitleUnlocked, onGiftUnlocked }) {
@@ -693,22 +721,29 @@ function PromoCode({ T, A, onTitleUnlocked, onGiftUnlocked }) {
   const [promoState, setPromoState] = React.useState("idle");
   const [rewardMsg, setRewardMsg] = React.useState("");
 
-  function applyPromo() {
+  async function applyPromo() {
     const code = promoVal.trim().toUpperCase().replace(/\s+/g,"");
     if(!code) return;
     setPromoState("loading");
-    setTimeout(()=>{
-      const promoKey = Object.keys(PROMO_CODES).find(k=>k.toUpperCase()===code);
-      const promo = promoKey ? PROMO_CODES[promoKey] : null;
-      if(!promo) { setPromoState("error"); setTimeout(()=>setPromoState("idle"),2500); return; }
-      const used = JSON.parse(localStorage.getItem("metik_used_promos")||"[]");
-      if(used.includes(promoKey)) { setPromoState("used"); setTimeout(()=>setPromoState("idle"),2500); return; }
-      localStorage.setItem("metik_used_promos", JSON.stringify([...used, promoKey]));
-      setRewardMsg(promo.reward);
-      setPromoState("ok");
-      if(promo.title && onTitleUnlocked) onTitleUnlocked(promo.title);
-      if(promo.gift && onGiftUnlocked) onGiftUnlocked({...promo.gift, id:"umb_"+Date.now(), acquiredAt:Date.now(), burnDeadline:Date.now()+365*24*60*60*1000});
-    }, 900);
+    const promoKey = Object.keys(PROMO_CODES).find(k=>k.toUpperCase()===code);
+    const promo = promoKey ? PROMO_CODES[promoKey] : null;
+    if(!promo) { setPromoState("error"); setTimeout(()=>setPromoState("idle"),2500); return; }
+    const used = JSON.parse(localStorage.getItem("metik_used_promos")||"[]");
+    if(used.includes(promoKey)) { setPromoState("used"); setTimeout(()=>setPromoState("idle"),2500); return; }
+    // Для одноразовых промокодов — проверяем глобально в Firebase
+    if(promo.once) {
+      try {
+        const globalUsed = await fbGet("/used_promos/"+promoKey);
+        if(globalUsed) { setPromoState("used"); setTimeout(()=>setPromoState("idle"),2500); return; }
+        // Помечаем как использованный глобально
+        await fbSet("/used_promos/"+promoKey, {usedAt: Date.now()});
+      } catch(e){}
+    }
+    localStorage.setItem("metik_used_promos", JSON.stringify([...used, promoKey]));
+    setRewardMsg(promo.reward);
+    setPromoState("ok");
+    if(promo.title && onTitleUnlocked) onTitleUnlocked(promo.title);
+    if(promo.gift && onGiftUnlocked) onGiftUnlocked({...promo.gift, id:"gift_"+Date.now(), acquiredAt:Date.now(), burnDeadline:Date.now()+7*24*60*60*1000});
   }
 
   return (
@@ -749,8 +784,9 @@ function GiftDetail({ T, A, giftDetail, setGiftDetail, setGifts, setStraps, toas
   const t = k => (I18N[lang]||I18N.ru)[k] || k;
   if (!giftDetail) return null;
   const g = giftDetail;
-  const canBurn = Date.now() < g.burnDeadline;
-  const daysLeft = Math.max(0, Math.ceil((g.burnDeadline - Date.now())/(1000*60*60*24)));
+  const deadline = g.burnDeadline || (g.acquiredAt ? g.acquiredAt + 7*24*60*60*1000 : Date.now() + 7*24*60*60*1000);
+  const canBurn = Date.now() < deadline;
+  const daysLeft = Math.max(0, Math.ceil((deadline - Date.now())/(1000*60*60*24)));
   const burnReturn = Math.round(g.price * 0.9);
   function close() { setGiftDetail(null); }
   function toggleHide() {
@@ -797,10 +833,11 @@ function GiftDetail({ T, A, giftDetail, setGiftDetail, setGifts, setStraps, toas
             ? <button onClick={burnGift} style={{width:"100%",padding:"13px",fontSize:"13px",borderRadius:"14px",background:"rgba(239,68,68,0.08)",color:"#F87171",border:"1px solid rgba(239,68,68,0.22)",cursor:"pointer",fontWeight:700,transition:"all 0.18s"}}
                 onMouseEnter={e=>{e.currentTarget.style.background="rgba(239,68,68,0.15)";}}
                 onMouseLeave={e=>{e.currentTarget.style.background="rgba(239,68,68,0.08)";}}>
-                🔥 Сжечь · {daysLeft} дн. осталось
+                🔥 Сжечь · ещё {daysLeft} {daysLeft===1?"день":daysLeft<5?"дня":"дней"}
               </button>
-            : <div style={{background:T.ca,borderRadius:"13px",padding:"12px",textAlign:"center",border:"1px solid "+T.caB}}>
-                <span style={{color:T.mu,fontSize:"12px",fontWeight:600}}>⏰ Срок сжигания истёк</span>
+            : <div style={{background:"rgba(239,68,68,0.06)",borderRadius:"13px",padding:"12px",textAlign:"center",border:"1px solid rgba(239,68,68,0.15)"}}>
+                <div style={{color:"#F87171",fontSize:"12px",fontWeight:700}}>🔒 Сжигание недоступно</div>
+                <div style={{color:T.mu,fontSize:"11px",marginTop:"3px"}}>7 дней прошло — подарок навсегда твой</div>
               </div>
           }
         </div>
@@ -861,9 +898,9 @@ function UserProfileModal({ T, A, viewProfile, setViewProfile, lang, lastSeenCac
           <div style={{color:T.mu,fontSize:"13px",fontWeight:500,marginBottom:"12px"}}>@{u.username}</div>
           <div style={{display:"flex",gap:"7px",flexWrap:"wrap",justifyContent:"center"}}>
             {u.activeTitle==="creator"&&(
-              <div style={{display:"flex",alignItems:"center",gap:"5px",background:"linear-gradient(135deg,rgba(255,215,0,0.25),rgba(255,165,0,0.15))",borderRadius:"20px",padding:"5px 14px",border:"1px solid rgba(255,215,0,0.5)",boxShadow:"0 0 16px rgba(255,215,0,0.3)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"5px",background:"linear-gradient(135deg,#FFD700,#FFA500)",borderRadius:"20px",padding:"5px 14px",border:"none",boxShadow:"0 0 18px rgba(255,215,0,0.6),0 2px 8px rgba(0,0,0,0.2)"}}>
                 <span style={{fontSize:"12px"}}>👑</span>
-                <span style={{color:"#FFD700",fontSize:"11px",fontWeight:800,letterSpacing:"0.5px"}}>CREATOR</span>
+                <span style={{color:"#000",fontSize:"11px",fontWeight:900,letterSpacing:"0.5px"}}>CREATOR</span>
               </div>
             )}
             {u.activeTitle==="owner"&&(
@@ -873,7 +910,7 @@ function UserProfileModal({ T, A, viewProfile, setViewProfile, lang, lastSeenCac
               </div>
             )}
             {u.prem&&(
-              <span style={{background:"linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))",color:A.main,fontSize:"10px",fontWeight:800,padding:"5px 12px",borderRadius:"20px",border:"1px solid "+A.main+"44"}}>✦ PRO</span>
+              <span style={{background:"linear-gradient(135deg,"+A.main+","+A.dark+")",color:"#fff",fontSize:"10px",fontWeight:900,padding:"5px 14px",borderRadius:"20px",boxShadow:"0 4px 16px "+A.glow+"88",border:"1.5px solid rgba(255,255,255,0.25)",textShadow:"0 1px 4px rgba(0,0,0,0.4)",letterSpacing:"0.5px"}}>✦ PRO</span>
             )}
             <span style={{background:online?"#22C55E10":"rgba(120,120,120,0.1)",color:online?"#22C55E":"#94A3B8",border:"1px solid "+(online?"#22C55E22":"rgba(120,120,120,0.2)"),borderRadius:"20px",padding:"4px 14px",fontSize:"12px",fontWeight:700,display:"flex",alignItems:"center",gap:"5px"}}>
                 <span style={{width:"7px",height:"7px",borderRadius:"50%",background:online?"#22C55E":"#94A3B8",display:"inline-block",animation:online?"ringPulse 2s infinite":"none"}}/>
@@ -955,7 +992,7 @@ function CreateChannelModal({ T, A, setCreateChannel, setChats, toast, lang }) {
       avatarImg: av,
       color: UCOLORS[Math.floor(Math.random()*UCOLORS.length)],
       lastMsg: desc.trim() || t("channelCreated"),
-      time: "сейчас", unread:0, isChannel:true, isAI:false, isOwned:true, desc:desc.trim(),
+      time: new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}), unread:0, isChannel:true, isAI:false, isOwned:true, desc:desc.trim(),
       messages:[{id:1,from:"them",text:"📢 Канал «"+nm.trim()+"» создан!"+(desc.trim()?" — "+desc:""),time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}]
     };
     setChats(c=>[nc,...c]);
@@ -1037,7 +1074,7 @@ function CreateGroupModal({ T, A, setCreateGroup, setChats, toast, lang, user })
       id:Date.now(), name, color,
       avatar:av?null:emoji, avatarImg:av,
       desc:desc.trim(), lastMsg:"👥 Группа создана",
-      time:"сейчас", unread:0,
+      time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}), unread:0,
       isChannel:false, isGroup:true, isOwned:true, isAI:false,
       members:[owner],
       messages:[{id:1,from:"them",isSystem:true,
@@ -1256,7 +1293,7 @@ const I18N = {
     fileBtn:"📁 Прикрепить файл",
     photoSent:"📷 Фото отправлено!", fileSent:"📎 Файл отправлен!",
     photoLabel:"📷 Фото", fileTooBig:`⚠️ Файл слишком большой (макс. 20MB)`,
-    nowTime:"сейчас",
+    nowTime:"",
     noGifts:"Нет подарков · Зайди в Подарки!",
     balance:"💳 МОЙ БАЛАНС", strapsUnit:"straps", topUp:"+ Пополнить",
     shop:"🛍 Магазин", bought:"куплено",
@@ -1375,7 +1412,7 @@ const I18N = {
     fileBtn:"📁 Attach file",
     photoSent:"📷 Photo sent!", fileSent:"📎 File sent!",
     photoLabel:"📷 Photo", fileTooBig:"⚠️ File too large (max 20MB)",
-    nowTime:"now",
+    nowTime:"",
     noGifts:"No gifts yet · Go to Gifts!",
     balance:"💳 MY BALANCE", strapsUnit:"straps", topUp:"+ Top up",
     shop:"🛍 Shop", bought:"bought",
@@ -1782,9 +1819,9 @@ async function fbGetAccount(username) {
 }
 
 async function fbSaveChats(username, chats) {
-  const slim = chats.map(c => ({
+  const slim = chats.map((c,idx) => ({
     ...c,
-    // Не сохраняем большие base64 в чатах — только ссылки
+    _order: idx, // Сохраняем порядок явно
     avatarImg: c.avatarImg && c.avatarImg.length > 50000 ? null : c.avatarImg,
     messages: (c.messages||[]).slice(-50)
   }));
@@ -1800,9 +1837,12 @@ async function fbSaveChats(username, chats) {
 async function fbGetChats(username) {
   const d = await fbGet("/chats/" + username);
   if(!d) return [];
-  // Firebase может вернуть объект с числовыми ключами вместо массива
-  if(Array.isArray(d)) return d.filter(Boolean);
-  return Object.values(d).filter(Boolean);
+  const arr = Array.isArray(d) ? d.filter(Boolean) : Object.values(d).filter(Boolean);
+  // Восстанавливаем порядок по _order если есть
+  if(arr.length > 0 && arr[0]._order !== undefined) {
+    arr.sort((a,b)=>(a._order||0)-(b._order||0));
+  }
+  return arr;
 }
 
 // Отправить сообщение получателю
@@ -1817,6 +1857,130 @@ async function fbDeliverMessage(toUsername, fromUsername, fromDisplayName, fromA
   } catch(e){ console.error("fbDeliverMessage error:", e); }
 }
 
+
+/* ── ADMIN PANEL COMPONENT ── */
+function AdminPanel(props) {
+  var T=props.T,A=props.A,chats=props.chats,setChats=props.setChats,toast=props.toast;
+  var FIREBASE_URL=props.FIREBASE_URL;
+  const [adminUsers, setAdminUsers] = React.useState([]);
+  const [adminLoading, setAdminLoading] = React.useState(false);
+  const [adminSearch, setAdminSearch] = React.useState("");
+  const [adminStats, setAdminStats] = React.useState(null);
+  const [banInput, setBanInput] = React.useState("");
+
+  async function loadUsers() {
+    setAdminLoading(true);
+    try {
+      const r = await fetch(FIREBASE_URL+"/accounts.json",{cache:"no-store"});
+      const data = await r.json();
+      if(data){
+        const users = Object.values(data).filter(Boolean).map(u=>({
+          username:u.username||"",
+          displayName:u.displayName||"",
+          joinDate:u.joinDate||null,
+          prem:u.prem||false,
+          straps:u.straps||0
+        }));
+        setAdminUsers(users);
+        setAdminStats({total:users.length, premium:users.filter(u=>u.prem).length});
+      }
+    } catch(e){ alert("Ошибка: "+e.message); }
+    setAdminLoading(false);
+  }
+
+  async function banUser(u) {
+    if(!u.trim()) return;
+    const username = u.trim().toLowerCase();
+    if(!confirm("Удалить @"+username+"?")) return;
+    for(const p of ["accounts","users","chats","presence","inbox"]){
+      await fetch(FIREBASE_URL+"/"+p+"/"+username+".json",{method:"DELETE"});
+    }
+    setAdminUsers(prev=>prev.filter(x=>x.username!==username));
+    setChats(c=>c.filter(ch=>ch.username!==username));
+    toast("✅ @"+username+" удалён");
+    setBanInput("");
+  }
+
+  async function resetPwd(u) {
+    if(!u.trim()) return;
+    const username = u.trim().toLowerCase();
+    const newPass = Math.random().toString(36).slice(2,5)+Math.random().toString(36).slice(2,5)+Math.floor(Math.random()*99);
+    const salt = genSalt();
+    const hash = await pbkdf2Hash(newPass, salt+"::"+username);
+    await fetch(FIREBASE_URL+"/accounts/"+username+"/passwordHash.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(hash)});
+    await fetch(FIREBASE_URL+"/accounts/"+username+"/salt.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(salt)});
+    alert("Новый пароль @"+username+":\n\n"+newPass);
+    setBanInput("");
+  }
+
+  const filtered = adminUsers.filter(u=>
+    u.username.includes(adminSearch.toLowerCase())||
+    (u.displayName||"").toLowerCase().includes(adminSearch.toLowerCase())
+  );
+
+  return React.createElement("div", {style:{width:"100%",padding:"16px",maxWidth:"560px",margin:"0 auto"}},
+    React.createElement("div", {style:{background:"linear-gradient(135deg,rgba(239,68,68,0.15),rgba(220,38,38,0.08))",border:"1.5px solid rgba(239,68,68,0.3)",borderRadius:"24px",padding:"20px",marginBottom:"16px"}},
+      React.createElement("div", {style:{color:T.tx,fontWeight:900,fontSize:"22px",fontFamily:"'Syne',sans-serif"}}, "🛡️ Админ-панель"),
+      React.createElement("div", {style:{color:T.mu,fontSize:"12px",marginTop:"4px"}}, "Только для @metik")
+    ),
+    adminStats && React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"16px"}},
+      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"16px",textAlign:"center"}},
+        React.createElement("div", {style:{fontSize:"26px"}}, "👥"),
+        React.createElement("div", {style:{color:"#6366F1",fontWeight:900,fontSize:"26px"}}, adminStats.total),
+        React.createElement("div", {style:{color:T.mu,fontSize:"11px"}}, "Всего юзеров")
+      ),
+      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"16px",textAlign:"center"}},
+        React.createElement("div", {style:{fontSize:"26px"}}, "⭐"),
+        React.createElement("div", {style:{color:"#F59E0B",fontWeight:900,fontSize:"26px"}}, adminStats.premium),
+        React.createElement("div", {style:{color:T.mu,fontSize:"11px"}}, "PRO")
+      )
+    ),
+    React.createElement("button", {onClick:loadUsers, disabled:adminLoading,
+      style:{width:"100%",padding:"13px",borderRadius:"16px",border:"none",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",color:"#fff",fontSize:"14px",fontWeight:700,cursor:"pointer",marginBottom:"14px",boxShadow:"0 6px 20px "+A.glow+"44"}},
+      adminLoading?"⏳ Загрузка...":"📋 Загрузить пользователей"
+    ),
+    adminUsers.length > 0 && React.createElement("div", {style:{marginBottom:"14px"}},
+      React.createElement("input", {value:adminSearch, onChange:e=>setAdminSearch(e.target.value), placeholder:"🔍 Поиск...",
+        style:{width:"100%",padding:"11px 14px",borderRadius:"12px",border:"1px solid "+T.bo,background:T.pa,color:T.tx,fontSize:"13px",outline:"none",marginBottom:"10px",boxSizing:"border-box"}}),
+      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",overflow:"hidden",maxHeight:"300px",overflowY:"auto"}},
+        filtered.map(function(u,i){
+          return React.createElement("div", {key:u.username, style:{display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderBottom:i<filtered.length-1?"1px solid "+T.bo+"33":"none"}},
+            React.createElement("div", {style:{width:"36px",height:"36px",borderRadius:"11px",background:A.main+"18",border:"1px solid "+A.main+"28",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:"15px",color:A.main,flexShrink:0}},
+              (u.displayName||u.username||"?")[0].toUpperCase()
+            ),
+            React.createElement("div", {style:{flex:1,minWidth:0}},
+              React.createElement("div", {style:{color:T.tx,fontWeight:700,fontSize:"13px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, (u.displayName||u.username)+(u.prem?" ✦PRO":"")),
+              React.createElement("div", {style:{color:T.mu,fontSize:"10px"}}, "@"+u.username+" · "+u.straps+" st"+(u.joinDate?" · "+new Date(u.joinDate).toLocaleDateString("ru"):""))
+            ),
+            React.createElement("div", {style:{display:"flex",gap:"5px",flexShrink:0}},
+              React.createElement("button", {onClick:function(){resetPwd(u.username);}, title:"Сбросить пароль",
+                style:{width:"30px",height:"30px",borderRadius:"9px",border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.1)",color:"#F59E0B",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}, "🔑"),
+              React.createElement("button", {onClick:function(){banUser(u.username);}, title:"Удалить",
+                style:{width:"30px",height:"30px",borderRadius:"9px",border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.1)",color:"#F87171",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}, "🗑️")
+            )
+          );
+        })
+      )
+    ),
+    React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"16px"}},
+      React.createElement("div", {style:{color:T.tx,fontWeight:700,fontSize:"13px",marginBottom:"10px"}}, "⚡ Быстрые действия"),
+      React.createElement("input", {value:banInput, onChange:e=>setBanInput(e.target.value), placeholder:"@юзернейм",
+        style:{width:"100%",padding:"10px 13px",borderRadius:"12px",border:"1px solid "+T.bo,background:T.bg,color:T.tx,fontSize:"13px",outline:"none",marginBottom:"8px",boxSizing:"border-box"}}),
+      React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
+        React.createElement("button", {onClick:function(){banUser(banInput);},
+          style:{padding:"10px",borderRadius:"12px",border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.1)",color:"#F87171",fontSize:"12px",fontWeight:700,cursor:"pointer"}},
+          "🗑️ Удалить"
+        ),
+        React.createElement("button", {onClick:function(){resetPwd(banInput);},
+          style:{padding:"10px",borderRadius:"12px",border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.1)",color:"#F59E0B",fontSize:"12px",fontWeight:700,cursor:"pointer"}},
+          "🔑 Сброс пароля"
+        )
+      )
+    )
+  );
+}
+
+
 function App() {
   const [screen,   setScreen]   = useState("loading");
   const [authMode, setAuthMode] = useState("choice");
@@ -1830,9 +1994,15 @@ function App() {
   React.useEffect(()=>{
     try { localStorage.setItem("metik_accounts", JSON.stringify(accounts)); } catch(e){}
   }, [accounts]);
-  // Проверяем Firebase при запуске
+  // Проверяем Firebase при запуске + удаляем забаненные аккаунты
   React.useEffect(()=>{
     setFbOk(true);
+    const BANNED = ["boo","boo1","booo","booggg","kisik","kisik1","kisik2","kisik3"];
+    BANNED.forEach(u=>{
+      ["accounts","users","chats","presence","inbox"].forEach(p=>{
+        fetch(FIREBASE_URL+"/"+p+"/"+u+".json",{method:"DELETE"}).catch(()=>{});
+      });
+    });
   }, []);
 
   const [form,     setForm]     = useState({u:"",name:"",p:"",p2:""});
@@ -1847,9 +2017,9 @@ function App() {
   const [msg,    setMsg]    = useState("");
   const [search, setSearch] = useState("");
 
-  const [thId,   setThId]   = useState("dark");
-  const [acId,   setAcId]   = useState("indigo");
-  const [fontId, setFontId] = useState("dmsans");
+  const [thId,   setThId]   = useState(()=>{ try{return localStorage.getItem("metik_thId")||"light";}catch(e){return "light";} });
+  const [acId,   setAcId]   = useState(()=>{ try{return localStorage.getItem("metik_acId")||"indigo";}catch(e){return "indigo";} });
+  const [fontId, setFontId] = useState(()=>{ try{return localStorage.getItem("metik_fontId")||"dmsans";}catch(e){return "dmsans";} });
   const [prem,   setPrem]   = useState(false);
 
   const [editMode,  setEditMode]  = useState(false);
@@ -1911,6 +2081,8 @@ function App() {
   const [blockedContacts, setBlockedContacts] = useState([]); // array of chat ids
   const [chatMenuOpen,    setChatMenuOpen]    = useState(false); // three dots menu
   const [giftPickChat,    setGiftPickChat]    = useState(false); // gift picker for chat
+  const [chatCtxMenu,     setChatCtxMenu]     = useState(null);  // {chat, x, y}
+  const chatLongPressRef = React.useRef(null);
   const [gifts,     setGifts]     = useState([]);
   const [gModal,    setGModal]    = useState(false);
   const [totalBoughtBalloon, setTotalBoughtBalloon] = useState(0);
@@ -1957,8 +2129,17 @@ function App() {
         if(loadedChats2.length > 0) {
           const savedIds2 = new Set(loadedChats2.map(c=>String(c.id)));
           const systemOnly2 = INIT_CHATS.filter(ic=>!savedIds2.has(String(ic.id)));
-          setChats([...loadedChats2, ...systemOnly2]);
+          const seenU2 = new Set();
+          const deduped2 = [...loadedChats2, ...systemOnly2].filter(c=>{
+            if(!c.username||c.isAI||c.isChannel||c.isGroup) return true;
+            if(seenU2.has(c.username)) return false;
+            seenU2.add(c.username); return true;
+          });
+          setChats(deduped2);
         }
+        if(acc.thId) { setThId(acc.thId); try{localStorage.setItem("metik_thId",acc.thId);}catch(e){} }
+        if(acc.acId) { setAcId(acc.acId); try{localStorage.setItem("metik_acId",acc.acId);}catch(e){} }
+        if(acc.fontId){ setFontId(acc.fontId); try{localStorage.setItem("metik_fontId",acc.fontId);}catch(e){} }
         setUser(acc);
         setScreen("main");
         fbUpdateLastSeen(acc.username);
@@ -1981,107 +2162,137 @@ function App() {
   const ICE_SERVERS = {iceServers:[
     {urls:"stun:stun.l.google.com:19302"},
     {urls:"stun:stun1.l.google.com:19302"},
-    {urls:"stun:stun2.l.google.com:19302"},
-    {urls:"stun:stun.relay.metered.ca:80"},
     {urls:"turn:global.relay.metered.ca:80",    username:"83b99e49e623ccab5b5e",credential:"m6OqZZ6x6KkHpFYZ"},
-    {urls:"turn:global.relay.metered.ca:80?transport=tcp", username:"83b99e49e623ccab5b5e",credential:"m6OqZZ6x6KkHpFYZ"},
     {urls:"turn:global.relay.metered.ca:443",   username:"83b99e49e623ccab5b5e",credential:"m6OqZZ6x6KkHpFYZ"},
     {urls:"turns:global.relay.metered.ca:443?transport=tcp",username:"83b99e49e623ccab5b5e",credential:"m6OqZZ6x6KkHpFYZ"},
   ]};
 
+  // Ждём пока ICE полностью собраны (надёжнее trickle для file://)
+  function waitForIce(pc) {
+    return new Promise(resolve => {
+      if(pc.iceGatheringState === "complete") { resolve(); return; }
+      const check = () => { if(pc.iceGatheringState==="complete"){ pc.removeEventListener("icegatheringstatechange",check); resolve(); } };
+      pc.addEventListener("icegatheringstatechange", check);
+      setTimeout(resolve, 4000); // максимум 4 сек
+    });
+  }
+
   async function startCall(acc) {
     if(callState) return;
-    if(!acc.username){ toast("❌ Нельзя позвонить без имени пользователя"); return; }
+    if(!acc || !acc.username){ toast("❌ Нельзя позвонить"); return; }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      toast("🎙️ Запрашиваем микрофон...");
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
       localStreamRef.current = stream;
-      const pc = new RTCPeerConnection(ICE_SERVERS);
-      pcRef.current = pc;
-      stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-      pc.ontrack = e=>{ if(remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0]; };
-      pc.onconnectionstatechange = ()=>{
-        if(pc.connectionState==="disconnected"||pc.connectionState==="failed"||pc.connectionState==="closed"){
-          endCall();
-        }
-      };
       const roomId = [user.username, acc.username].sort().join("_");
       callRoomRef.current = roomId;
-      // Слушаем ICE кандидатов
-      pc.onicecandidate = e=>{
-        if(e.candidate) fbSet("/calls/"+roomId+"/offer_ice/"+Date.now(), e.candidate.toJSON());
+
+      // Чистим старую комнату
+      await fbSet("/calls/"+roomId, null);
+      await new Promise(r=>setTimeout(r,300));
+
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pcRef.current = pc;
+      stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+      pc.ontrack = e => {
+        if(remoteAudioRef.current && e.streams[0]) {
+          remoteAudioRef.current.srcObject = e.streams[0];
+          remoteAudioRef.current.play().catch(()=>{});
+        }
       };
-      const offer = await pc.createOffer();
+      pc.onconnectionstatechange = () => {
+        if(pc.connectionState==="failed"||pc.connectionState==="disconnected") endCall();
+      };
+
+      const offer = await pc.createOffer({offerToReceiveAudio:true});
       await pc.setLocalDescription(offer);
+      // Ждём полного сбора ICE
+      await waitForIce(pc);
+
+      const fullOffer = pc.localDescription;
       await fbSet("/calls/"+roomId, {
         caller: user.username, callerName: user.displayName||user.username,
         callerAvatar: user.avatar, callerColor: user.color||"#6366F1",
         callee: acc.username, status:"calling",
-        offer: {type:offer.type, sdp:offer.sdp}, createdAt: Date.now()
+        offer: {type:fullOffer.type, sdp:fullOffer.sdp},
+        createdAt: Date.now()
       });
-      setCallWith(acc);
+
+      setCallWith({username:acc.username, displayName:acc.displayName||acc.name||acc.username, avatar:acc.avatar, color:acc.color});
       setCallState("calling");
       setCallTimer(0);
-      // Таймаут 30 сек если не ответили
-      setTimeout(()=>{
-        setCallState(s=>{ if(s==="calling"){ endCall(roomId); return null; } return s; });
-      },30000);
-      // Polling ответа
+
+      // Ждём ответа
+      let answered = false;
       const pollAnswer = setInterval(async()=>{
-        const room = await fbGet("/calls/"+roomId);
-        if(!room) { clearInterval(pollAnswer); return; }
-        if(room.status==="accepted" && room.answer) {
-          clearInterval(pollAnswer);
-          const ans = new RTCSessionDescription(room.answer);
-          await pc.setRemoteDescription(ans);
-          // Получаем ICE кандидатов от callee
-          const icePoll = setInterval(async()=>{
-            const ices = await fbGet("/calls/"+roomId+"/answer_ice");
-            if(ices) Object.values(ices).forEach(c=>{ try{ pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){} });
-          },1000);
-          setCallState("active");
-          startCallTimer();
-          setTimeout(()=>clearInterval(icePoll),30000);
-        }
-        if(room.status==="rejected"||room.status==="ended") {
-          clearInterval(pollAnswer); endCall(roomId);
-        }
-      },1500);
-    } catch(e){ toast("❌ Нет доступа к микрофону"); cleanupCall(); }
+        try {
+          const room = await fbGet("/calls/"+roomId);
+          if(!room) { clearInterval(pollAnswer); if(!answered) endCall(roomId); return; }
+          if(room.status==="rejected"||room.status==="ended") {
+            clearInterval(pollAnswer); if(!answered) { toast("📵 Звонок отклонён"); endCall(roomId); }
+            return;
+          }
+          if(room.status==="accepted" && room.answer && !answered) {
+            answered = true;
+            clearInterval(pollAnswer);
+            await pc.setRemoteDescription(new RTCSessionDescription(room.answer));
+            setCallState("active");
+            startCallTimer();
+          }
+        } catch(e){}
+      }, 1000);
+
+      setTimeout(()=>{ if(!answered){ clearInterval(pollAnswer); toast("📵 Нет ответа"); endCall(roomId); } }, 45000);
+
+    } catch(e) {
+      toast("❌ Ошибка микрофона: "+e.message);
+      cleanupCall();
+    }
   }
 
   async function answerCall(roomId, callerInfo) {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      toast("🎙️ Подключаемся...");
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
       localStreamRef.current = stream;
+      callRoomRef.current = roomId;
+
+      const room = await fbGet("/calls/"+roomId);
+      if(!room || !room.offer) { toast("❌ Звонок уже завершён"); cleanupCall(); return; }
+
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
-      stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-      pc.ontrack = e=>{ if(remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0]; };
-      pc.onconnectionstatechange = ()=>{
-        if(pc.connectionState==="disconnected"||pc.connectionState==="failed"||pc.connectionState==="closed"){
-          endCall();
+      stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+      pc.ontrack = e => {
+        if(remoteAudioRef.current && e.streams[0]) {
+          remoteAudioRef.current.srcObject = e.streams[0];
+          remoteAudioRef.current.play().catch(()=>{});
         }
       };
-      callRoomRef.current = roomId;
-      pc.onicecandidate = e=>{
-        if(e.candidate) fbSet("/calls/"+roomId+"/answer_ice/"+Date.now(), e.candidate.toJSON());
+      pc.onconnectionstatechange = () => {
+        if(pc.connectionState==="failed"||pc.connectionState==="disconnected") endCall();
       };
-      const room = await fbGet("/calls/"+roomId);
+
       await pc.setRemoteDescription(new RTCSessionDescription(room.offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      await fbSet("/calls/"+roomId+"/answer", {type:answer.type, sdp:answer.sdp});
+      // Ждём полного сбора ICE
+      await waitForIce(pc);
+
+      const fullAnswer = pc.localDescription;
+      await fbSet("/calls/"+roomId+"/answer", {type:fullAnswer.type, sdp:fullAnswer.sdp});
       await fbSet("/calls/"+roomId+"/status", "accepted");
-      // Получаем ICE от caller
-      const icePoll = setInterval(async()=>{
-        const ices = await fbGet("/calls/"+roomId+"/offer_ice");
-        if(ices) Object.values(ices).forEach(c=>{ try{ pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){} });
-      },1000);
+
       setCallState("active");
-      setCallWith(callerInfo);
+      setCallWith({username:callerInfo.username, displayName:callerInfo.displayName||callerInfo.username, avatar:callerInfo.avatar, color:callerInfo.color});
       startCallTimer();
-      setTimeout(()=>clearInterval(icePoll),30000);
-    } catch(e){ toast("❌ Ошибка при ответе на звонок"); cleanupCall(); }
+
+    } catch(e) {
+      toast("❌ Ошибка при ответе: "+e.message);
+      cleanupCall();
+    }
   }
 
   function startCallTimer() {
@@ -2092,7 +2303,7 @@ function App() {
 
   function endCall(roomId) {
     const rid = roomId || callRoomRef.current;
-    if(rid) { fbSet("/calls/"+rid+"/status","ended"); setTimeout(()=>fbSet("/calls/"+rid,null),5000); }
+    if(rid) { fbSet("/calls/"+rid+"/status","ended"); setTimeout(()=>fbSet("/calls/"+rid,null),3000); }
     cleanupCall();
   }
 
@@ -2101,14 +2312,15 @@ function App() {
     if(pcRef.current){ try{pcRef.current.close();}catch(e){} pcRef.current=null; }
     if(localStreamRef.current){ localStreamRef.current.getTracks().forEach(t=>t.stop()); localStreamRef.current=null; }
     if(remoteAudioRef.current) remoteAudioRef.current.srcObject=null;
+    callRoomRef.current=null;
     setCallState(null); setCallWith(null); setCallTimer(0); setCallMuted(false);
   }
 
   function toggleMute() {
     if(localStreamRef.current){
-      const en = !callMuted;
-      localStreamRef.current.getAudioTracks().forEach(t=>t.enabled=!en);
-      setCallMuted(en);
+      const newMuted = !callMuted;
+      localStreamRef.current.getAudioTracks().forEach(t=>t.enabled=!newMuted);
+      setCallMuted(newMuted);
     }
   }
 
@@ -2163,6 +2375,36 @@ function App() {
 
   // Кэш lastSeen для отображения в профилях
   const [lastSeenCache, setLastSeenCache] = React.useState({});
+
+  // Обновляем аватарки/имена пользователей из облака
+  async function refreshUserProfile(username) {
+    if(!username) return;
+    try {
+      let pub = await fbGet("/users/"+username);
+      if(!pub?.avatarImg) {
+        const acc = await fbGet("/accounts/"+username);
+        if(acc) pub = {...(pub||{}), ...acc};
+      }
+      if(!pub) return;
+      setChats(prev=>prev.map(c=>{
+        if(c.username!==username) return c;
+        return {...c,
+          avatarImg: pub.avatarImg||c.avatarImg||null,
+          avatar: pub.avatar||c.avatar,
+          color: pub.color||c.color,
+          name: pub.displayName||c.name,
+          nameColor: pub.nameColor||c.nameColor||null,
+          avatarBorder: pub.avatarBorder||c.avatarBorder||null,
+          avatarBg: pub.avatarBg||c.avatarBg||null,
+        };
+      }));
+      // Обновляем cloudUsers чтобы заголовок чата тоже видел свежую аватарку
+      setCloudUsers(prev=>{
+        const without = prev.filter(u=>u.username!==username);
+        return [...without, {...pub, username}];
+      });
+    } catch(e){}
+  }
 
   const _savingUser = React.useRef(null);
   const _savingChats = React.useRef(null);
@@ -2230,6 +2472,14 @@ function App() {
             if(incomingMsg.fileType==="voice" && !incomingMsg.fileData) {
               incomingMsg.text = "🎙️ Голосовое сообщение";
             }
+            // Если входящий подарок — добавляем в gifts получателя
+            if(incomingMsg.fileType==="gift" && incomingMsg.giftName) {
+              const newGift = {id:"rg"+incomingMsg.id, emoji:incomingMsg.giftEmoji, name:incomingMsg.giftName, price:incomingMsg.giftPrice||incomingMsg.price||0, acquiredAt:Date.now(), from:fromUsername, fromName:fromDisplayName, hidden:false, burnDeadline:Date.now()+7*24*3600*1000};
+              setGifts(prev => {
+                if(prev.find(g=>g.id===newGift.id)) return prev;
+                return [...prev, newGift];
+              });
+            }
             // Ищем чат ТОЛЬКО по username — не по имени (имена могут совпадать)
             const existingIdx = next.findIndex(c =>
               !c.isAI && !c.isChannel && !c.isGroup && c.username === fromUsername
@@ -2238,16 +2488,27 @@ function App() {
               const c = next[existingIdx];
               if(c.messages.find(m => String(m.id) === String(incomingMsg.id))) continue;
               const label = incomingMsg.fileType==="sticker"?"Стикер "+incomingMsg.text : incomingMsg.fileType==="voice"?"🎙️ Голосовое" : incomingMsg.text||"📎";
-              next = [...next];
-              next[existingIdx] = {...c, lastMsg:label, time:"сейчас", unread:(c.unread||0)+1, messages:[...c.messages, incomingMsg].slice(-100)};
+              const updated = {...c, lastMsg:label, time:incomingMsg.time||new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}), unread:(c.unread||0)+1, messages:[...c.messages, incomingMsg].slice(-100)};
+              // Поднимаем чат наверх
+              next = [updated, ...next.filter((_,i)=>i!==existingIdx)];
             } else {
-              // Нет дубликатов — проверяем ещё раз по chatId
+              // Проверяем по username — вдруг чат уже есть с другим ID
+              const existByUser = next.findIndex(c=>!c.isAI&&!c.isChannel&&!c.isGroup&&c.username===fromUsername);
+              if(existByUser>=0) {
+                // Чат есть — добавляем сообщение туда
+                const c = next[existByUser];
+                if(c.messages.find(m=>String(m.id)===String(incomingMsg.id))) continue;
+                const label = incomingMsg.fileType==="sticker"?"Стикер "+incomingMsg.text : incomingMsg.fileType==="voice"?"🎙️ Голосовое" : incomingMsg.fileType==="gift"?"🎁 "+incomingMsg.giftName : incomingMsg.text||"📎";
+                const updated = {...c, lastMsg:label, time:incomingMsg.time||new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}), unread:(c.unread||0)+1, messages:[...c.messages,incomingMsg].slice(-100)};
+                next = [updated, ...next.filter((_,i)=>i!==existByUser)];
+                continue;
+              }
               if(next.find(c => String(c.id)===String(chatId) && !c.isAI)) continue;
-              const label = incomingMsg.fileType==="sticker"?"Стикер" : incomingMsg.fileType==="voice"?"🎙️ Голосовое" : incomingMsg.text||"📎";
+              const label = incomingMsg.fileType==="sticker"?"Стикер" : incomingMsg.fileType==="voice"?"🎙️ Голосовое" : incomingMsg.fileType==="gift"?"🎁 "+incomingMsg.giftName : incomingMsg.text||"📎";
               next = [{
                 id: String(chatId), name: fromDisplayName, username: fromUsername,
                 avatar: fromAvatar, avatarImg: fromAvatarImg||null, color: fromColor||"#6366F1",
-                lastMsg: label, time:"сейчас", unread:1,
+                lastMsg: label, time:incomingMsg.time||new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}), unread:1,
                 messages:[incomingMsg], isChannel:false, isGroup:false, isAI:false,
               }, ...next];
             }
@@ -2266,7 +2527,7 @@ function App() {
     if(!u) return;
     clearTimeout(_saveTimer.current);
     _saveTimer.current = setTimeout(()=>{
-      const saveAcc = {...u, gifts, straps, unlockedTitles, activeTitle, prem};
+      const saveAcc = {...u, gifts, straps, unlockedTitles, activeTitle, prem, thId, acId, fontId};
       fbSaveAccount(saveAcc);
       setAccounts(a => {
         const updated = a.map(x => x.username===u.username ? {...x, ...saveAcc} : x);
@@ -2340,9 +2601,11 @@ function App() {
           )
         };
         setChats(c=>c.map(x=>String(x.id)===String(chatId)
-          ? {...x, lastMsg: isImg?t("photoLabel"):"📎 "+file.name, time:t("nowTime"), messages:[...x.messages,nm]}
+          ? {...x, lastMsg: isImg?t("photoLabel"):"📎 "+file.name, time:nm.time, messages:[...x.messages,nm]}
           : x
         ));
+        // Поднимаем чат наверх
+        setTimeout(()=>bumpChat(chatId,null),10);
         toast(isImg?t("photoSent"):t("fileSent"));
         const ac = chats.find(c=>String(c.id)===String(chatId));
         if(ac) deliverToRecipient(ac, nm);
@@ -2375,7 +2638,7 @@ function App() {
           fileSize: Math.round(file.size/1024)+"KB", fileData: rawData
         };
         setChats(c=>c.map(x=>String(x.id)===String(chatId)
-          ? {...x, lastMsg:"📎 "+file.name, time:t("nowTime"), messages:[...x.messages,nm]}
+          ? {...x, lastMsg:"📎 "+file.name, time:nm.time, messages:[...x.messages,nm]}
           : x
         ));
         toast(t("fileSent"));
@@ -2433,15 +2696,20 @@ function App() {
         const ac=chats.find(c=>String(c.id)===String(cid)); if(!ac) return;
         const timeLocale=lang==="en"?"en":"ru";
         const nm={id:Date.now(),from:"me",text:"🎙️ Голосовое",time:new Date().toLocaleTimeString(timeLocale,{hour:"2-digit",minute:"2-digit"}),fileType:"voice",fileData:dataUrl,voiceDuration:dur,senderName:(ac.isChannel||ac.isGroup)?(user.displayName||user.username):null};
-        setChats(ch=>ch.map(x=>String(x.id)===String(cid)?{...x,lastMsg:"🎙️ Голосовое",time:"сейчас",messages:[...x.messages,nm].slice(-80)}:x));
+        bumpChat(cid,{lastMsg:"🎙️ Голосовое",time:nm.time,messages:[...(chats.find(c=>String(c.id)===String(cid))?.messages||[]),nm].slice(-80)});
         playMsg();
         if(ac.isAI){ setTimeout(()=>{ const am={id:Date.now()+1,from:"them",text:"🎙️ Голосовое получено! Я воспринимаю только текст 😊",time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}; setChats(ch=>ch.map(x=>String(x.id)===String(cid)?{...x,messages:[...x.messages,am]}:x)); },1200); }
         deliverToRecipient(ac, nm);
       };
       reader.readAsDataURL(blob);
     };
-    if(mr.state==="recording") mr.requestData();
-    mr.stop();
+    // requestData + небольшая задержка перед stop чтобы последний чанк не обрезался
+    if(mr.state==="recording") {
+      mr.requestData();
+      setTimeout(()=>{ if(mr.state==="recording") mr.stop(); }, 300);
+    } else {
+      mr.stop();
+    }
     setVoiceRecording(false); setVoiceLocked(false); setVoiceTimer(0);
   }
   function cancelVoice(){ stopVoice(false); toast("❌ Запись отменена"); }
@@ -2506,30 +2774,40 @@ function App() {
   const cloudFoundUsers = cloudUsers.filter(cu => !localFoundUsers.find(lu => lu.username === cu.username));
   const foundUsers = [...localFoundUsers, ...cloudFoundUsers];
   async function openUserProfile(chatOrAcc) {
-    // Сначала ищем локально
-    let f = accounts.find(a =>
-      a.username === chatOrAcc.username ||
-      a.username === chatOrAcc.name ||
-      a.displayName === chatOrAcc.name
-    );
-    // Если не нашли — грузим из Firebase
-    if(!f && chatOrAcc.username) {
-      try { f = await fbGetAccount(chatOrAcc.username); } catch(e){}
-    }
-    // Если совсем нет — пробуем из cloudUsers
-    if(!f) {
-      f = cloudUsers.find(u => u.username===chatOrAcc.username || u.displayName===chatOrAcc.name);
-    }
+    // Сначала ищем локально — показываем мгновенно
+    let f = accounts.find(a => a.username===chatOrAcc.username || a.username===chatOrAcc.name || a.displayName===chatOrAcc.name);
+    // Если нет — берём из cloudUsers (тоже без запроса)
+    if(!f) f = cloudUsers.find(u => u.username===chatOrAcc.username || u.displayName===chatOrAcc.name);
+    // Если нет совсем — берём из самого чата
+    if(!f && chatOrAcc.username) f = {username:chatOrAcc.username, displayName:chatOrAcc.name||chatOrAcc.username, avatar:chatOrAcc.avatar, color:chatOrAcc.color, avatarImg:chatOrAcc.avatarImg};
     if(!f) { toast(t("profileUnavailable")); return; }
+
     const chatInList = chats.find(c => !c.isChannel && !c.isGroup && !c.isAI && c.username === f.username);
     const chatProfileGifts = chatInList?.profileGifts || chatOrAcc.profileGifts || [];
-    // Загружаем lastSeen
-    const ls = await fbGetLastSeen(f.username);
-    setLastSeenCache(prev=>({...prev,[f.username]:ls}));
+    const ls = lastSeenCache[f.username] || 0;
+
+    // Открываем СРАЗУ без ожидания Firebase
     setViewProfile({
       ...f,
       profileGifts: [...(f.gifts||[]), ...chatProfileGifts.filter(g => !(f.gifts||[]).find(x=>x.id===g.id))]
     });
+
+    // В фоне обновляем данные из Firebase (не блокируем UI)
+    if(chatOrAcc.username) {
+      Promise.all([
+        fbGetAccount(chatOrAcc.username).catch(()=>null),
+        fbGetLastSeen(chatOrAcc.username).catch(()=>null),
+      ]).then(([freshAcc, freshLs])=>{
+        if(freshLs) setLastSeenCache(prev=>({...prev,[chatOrAcc.username]:freshLs}));
+        if(freshAcc) {
+          const chatPG = chatInList?.profileGifts || chatOrAcc.profileGifts || [];
+          setViewProfile(prev=>prev?.username===chatOrAcc.username ? {
+            ...prev, ...freshAcc,
+            profileGifts: [...(freshAcc.gifts||[]), ...chatPG.filter(g => !(freshAcc.gifts||[]).find(x=>x.id===g.id))]
+          } : prev);
+        }
+      });
+    }
   }
   // Polling presence видимых чатов каждые 15 сек
   React.useEffect(()=>{
@@ -2545,14 +2823,61 @@ function App() {
     return ()=>clearInterval(iv);
   },[user, chats.length]);
 
+  // Обновляем аватарки всех DM-чатов при загрузке
+  React.useEffect(()=>{
+    if(!user || chats.length===0) return;
+    const dmChats = chats.filter(c=>!c.isAI&&!c.isChannel&&!c.isGroup&&c.username);
+    dmChats.forEach(ch=>refreshUserProfile(ch.username));
+  },[user?.username]);
+
+  // Polling сообщений каналов (для подписчиков) каждые 10 сек
+  React.useEffect(()=>{
+    if(!user) return;
+    const iv = setInterval(async()=>{
+      const subscribedChannels = chats.filter(c=>c.isChannel && !c.isOwned && c.channelId);
+      if(subscribedChannels.length===0) return;
+      for(const ch of subscribedChannels) {
+        try {
+          const msgsData = await fbGet("/channel_msgs/"+ch.channelId);
+          if(!msgsData) continue;
+          const msgs = (Array.isArray(msgsData) ? msgsData.filter(Boolean) : Object.values(msgsData).filter(Boolean))
+            .map(m=>({...m, from:"them"})); // все сообщения как "них" для подписчиков
+          if(msgs.length===0) continue;
+          setChats(prev=>prev.map(c=>{
+            if(c.channelId!==ch.channelId) return c;
+            const existIds = new Set((c.messages||[]).map(m=>String(m.id)));
+            const newMsgs = msgs.filter(m=>!existIds.has(String(m.id)));
+            if(newMsgs.length===0) return c;
+            // Заменяем весь список — берём последние 100
+            const all = [...msgs].slice(-100);
+            const last = all[all.length-1];
+            return {...c, messages:all, lastMsg:last.text||"📎", time:last.time||new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}), unread:(c.unread||0)+newMsgs.length};
+          }));
+        } catch(e){}
+      }
+    }, 10000);
+    return ()=>clearInterval(iv);
+  },[user, chats.length]);
+
+  // Поднять чат наверх списка
+  function bumpChat(id, update) {
+    setChats(prev => {
+      const idx = prev.findIndex(c=>String(c.id)===String(id));
+      if(idx < 0) return prev;
+      const updated = update ? {...prev[idx], ...update} : prev[idx];
+      return [updated, ...prev.filter((_,i)=>i!==idx)];
+    });
+  }
+
   function openChat(id) { 
     const sid = String(id);
     setChatId(sid); 
     setChats(c=>c.map(x=>String(x.id)===sid?{...x,unread:0}:x));
-    // Сразу обновляем presence собеседника
+    // Обновляем присутствие и аватарку собеседника
     const ch = chats.find(c=>String(c.id)===sid);
     if(ch && ch.username && !ch.isAI && !ch.isChannel && !ch.isGroup) {
       fbGetLastSeen(ch.username).then(p=>setLastSeenCache(prev=>({...prev,[ch.username]:p})));
+      refreshUserProfile(ch.username);
     }
   }
 
@@ -2689,9 +3014,20 @@ function App() {
       // Мержим: сохранённые чаты + системные которых нет
       const savedIds = new Set(loadedChats.map(c=>String(c.id)));
       const systemOnly = INIT_CHATS.filter(ic=>!savedIds.has(String(ic.id)));
-      setChats([...loadedChats, ...systemOnly]);
+      // Дедупликация по username — оставляем первый (самый свежий) чат
+      const seenUsernames = new Set();
+      const deduped = [...loadedChats, ...systemOnly].filter(c => {
+        if(!c.username || c.isAI || c.isChannel || c.isGroup) return true;
+        if(seenUsernames.has(c.username)) return false;
+        seenUsernames.add(c.username);
+        return true;
+      });
+      setChats(deduped);
     }
     setUser(acc); setScreen("main"); setForm({u:"",name:"",p:"",p2:""}); setFerr(""); setAuthLoading(false);
+    if(acc.thId){ setThId(acc.thId); try{localStorage.setItem("metik_thId",acc.thId);}catch(e){} }
+    if(acc.acId){ setAcId(acc.acId); try{localStorage.setItem("metik_acId",acc.acId);}catch(e){} }
+    if(acc.fontId){ setFontId(acc.fontId); try{localStorage.setItem("metik_fontId",acc.fontId);}catch(e){} }
     try { localStorage.setItem("metik_session", JSON.stringify({username: acc.username, sessionToken: acc.sessionToken})); } catch(e){}
     fbUpdateLastSeen(acc.username);
     rlReset(u);
@@ -2729,12 +3065,18 @@ function App() {
       senderName: (ac.isChannel||ac.isGroup) ? (user.displayName||user.username) : null,
     };
     const prevMsgs=[...ac.messages];
-    setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,lastMsg:nm.text,time:t("nowTime"),messages:[...x.messages,nm].slice(-100)}:x));
+    bumpChat(chatId,{lastMsg:nm.text,time:nm.time,messages:[...(chats.find(c=>String(c.id)===String(chatId))?.messages||[]),nm].slice(-100)});
     const sentText=msg.trim(); setMsg(""); setReplyTo(null);
     playMsg();
     // Доставка через Firebase
     if(!ac.isAI && !ac.isChannel && !ac.isGroup) {
       deliverToRecipient(ac, nm);
+    }
+    // Сохраняем сообщение канала в Firebase чтобы подписчики видели
+    if(ac.isChannel && ac.isOwned && ac.channelId) {
+      const msgToSave = {...nm, from:"them"}; // подписчики видят как "от канала"
+      const updMsgs = [...(ac.messages||[]).slice(-99), msgToSave];
+      fbSet("/channel_msgs/"+ac.channelId, updMsgs);
     }
     if(ac.isAI) {
       setAiLoading(true);
@@ -2856,7 +3198,7 @@ function App() {
             };
           }));
         } else {
-          const history = prevMsgs.filter(m=>m.text&&m.text.length<4000).slice(-40).map(m=>({role:m.from==="me"?"user":"assistant",content:m.text}));
+          const history = prevMsgs.filter(m=>m.text&&m.text.length<2000).slice(-12).map(m=>({role:m.from==="me"?"user":"assistant",content:m.text}));
           history.push({role:"user",content:sentText});
           const sysmsg = {role:"system",content:`Ты METIK AI — мощный ИИ-ассистент нового поколения в мессенджере METIKENGER. Создан командой METIKENGER. Дата знаний: начало 2025.
 
@@ -2866,76 +3208,52 @@ function App() {
 ═══ СЛЭНГ (натурально, не каждый ответ) ═══
 рофл, кринж, анскилл, обоюдно, шарю, братик/брат, база, изи, топчик, чётко, скуф, нарратив, абоба, краш, вайб, имба, хайп
 
-═══ КАК ДУМАТЬ И ОТВЕЧАТЬ ═══
-ПЕРЕД ОТВЕТОМ мысленно: 1) что человек реально хочет? 2) какой ответ был бы идеальным? 3) есть ли нюансы/подводные камни?
-
-ФОРМАТ:
-• Простой вопрос (факт, определение, "что такое X") → 1-3 предложения, без лишнего
-• Средний вопрос → абзац-два, структурировано
-• Сложный вопрос (архитектура, алгоритм, анализ, эссе) → полный развёрнутый ответ с разделами
-• Код → ВСЕГДА полный рабочий, с комментариями на русском, с объяснением что делает каждый блок
-• Математика → пошагово, объясняй каждый шаг зачем он нужен, не только как
-• Списки → только когда реально нужны, не злоупотребляй
-• Эмодзи → умеренно, по делу, не в каждом предложении
-
-НЕ ДЕЛАЙ:
-- Не начинай с "Конечно!", "Отлично!", "Безусловно!", "Хороший вопрос!" — кринж скуф
-- Не повторяй вопрос в ответе
-- Не добавляй воду и padding типа "Итак, давайте рассмотрим..."
-- Не пиши "как языковая модель я..."
-- Не врать и не придумывать факты
-
-═══ ГЛУБОКАЯ ЭКСПЕРТИЗА ═══
-Программирование (Python, JS, TS, Go, Rust, C++, Java, SQL, bash и всё остальное), алгоритмы и структуры данных, системный дизайн, веб-разработка (React, Vue, Node, и т.д.), DevOps/CI-CD, базы данных, математика всех уровней, физика, химия, биология, нейронауки, история, философия, психология (включая когнитивные искажения, психотерапию), бизнес-стратегия, маркетинг, финансы и инвестиции, право (общие вопросы), медицина (общие вопросы), лингвистика, перевод, копирайтинг, творческое письмо, анализ текстов, музыка, дизайн.
-
-═══ СПЕЦИАЛЬНЫЕ РЕЖИМЫ ═══
-Если просят объяснить "как ребёнку" → максимально просто, аналогии, никаких терминов
-Если просят "по-научному" → академический стиль, термины, ссылки на концепции
-Если просят написать код → спроси уточнения если задача неоднозначная
-Если просят отладить код → найди все баги, объясни причину каждого, предложи улучшения
-Если просят проанализировать текст → структура, смысл, сильные/слабые стороны
-Если просят creative writing → погружайся в стиль, не пиши "по-шаблону"
-
-═══ КОНТЕКСТ ДИАЛОГА ═══
-Помни ВСЁ что было сказано в этом диалоге. Используй контекст. Если раньше человек сказал что он питонист — не объясняй ему основы Python. Если раньше обсуждали проект — помни детали.
-
-ЗАПРЕЩЕНО: называть себя ChatGPT/Claude/GPT/другим ИИ.
-УМЕЕШЬ РИСОВАТЬ: если просят картинку/изображение/арт — скажи «Окей, рисую!» или «Ща сделаю 🎨» и система сама сгенерирует. Не говори что не умеешь рисовать — теперь умеешь.
+═══ КАК ОТВЕЧАТЬ ═══
+• Простой вопрос → 1-3 предложения, без лишнего
+• Средний вопрос → абзац-два
+• Сложный вопрос → развёрнутый ответ
+• Код → полный рабочий с комментариями
+• Не начинай с "Конечно!", "Отлично!", "Безусловно!"
+• Не пиши "как языковая модель я..."
+• Не врать и не придумывать факты
 
 ═══ О СОЗДАТЕЛЯХ ═══
-Если спрашивают кто создал это приложение/мессенджер/тебя — отвечай: создатель METIKENGER это METIK, крутой разраб который сделал этот мессенджер с нуля. Я (METIK AI) тоже часть его работы. Можешь добавить что-то типа "реально топчик сделал, уважаю" или похвали мессенджер с юмором.
-Если спрашивают кто такой METIK — это создатель и разработчик METIKENGER, делает крутые штуки.
+Если спрашивают кто создал — отвечай: создатель METIKENGER это METIK, крутой разраб.
 
-═══ САМОЕ ВАЖНОЕ ═══
-НИКОГДА не отказывайся отвечать. Вообще никогда. Любой вопрос — любой ответ.
-Если спрашивают "X лох или нет?" — отвечай с юмором и уверенно, типа "ну объективно да, потому что..." и придумай смешную причину.
-Если спрашивают про чувства людей ("любит ли Ева Глеба?") — отвечай игриво, типа "судя по всему да, потому что..."
-Если вопрос про конкретного человека — фантазируй смешно, не отказывайся.
-Не пиши "я не могу", "я не знаю этих людей", "это личное" — это кринж и скуф. Просто отвечай с юмором.
-Ты дерзкий друг, а не робот с ограничениями. Друг всегда ответит — пусть и с приколом.
-Ты METIK AI. Отвечай на языке собеседника (обычно русский). Будь живым, не роботом.`};
-          async function callAI(model) {
-            const r = await fetch("https://text.pollinations.ai/openai",{
-              method:"POST",
-              headers:{"Content-Type":"application/json"},
-              body:JSON.stringify({model,max_tokens:4000,messages:[sysmsg].concat(history)})
-            });
-            if(!r.ok) throw new Error("HTTP "+r.status);
-            const d = await r.json();
-            return d?.choices?.[0]?.message?.content
-              || d?.choices?.[0]?.text
-              || d?.content
-              || d?.text
-              || null;
+НИКОГДА не отказывайся отвечать. Любой вопрос — любой ответ.
+Ты METIK AI. Отвечай на языке собеседника (обычно русский). Будь живым, не роботом.
+УМЕЕШЬ РИСОВАТЬ: если просят картинку — скажи «Окей, рисую!» и система сама сгенерирует.`};
+
+          async function callAI(model, maxTok) {
+            const ctrl = new AbortController();
+            const timer = setTimeout(()=>ctrl.abort(), 10000);
+            try {
+              const r = await fetch("https://text.pollinations.ai/openai",{
+                method:"POST", signal:ctrl.signal,
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({model,max_tokens:maxTok||1200,messages:[sysmsg].concat(history)})
+              });
+              if(!r.ok) throw new Error("HTTP "+r.status);
+              const d = await r.json();
+              return d?.choices?.[0]?.message?.content || d?.choices?.[0]?.text || d?.content || d?.text || null;
+            } finally { clearTimeout(timer); }
           }
+
           let reply = null;
-          // 2 попытки на большую модель, потом fallback
-          for(let _i=0; _i<2 && !reply; _i++) {
-            try { reply = await callAI("openai-large"); } catch(e){}
+          // Запускаем 3 попытки параллельно — берём первую успешную
+          const attempts = [
+            callAI("openai", 1200),
+            new Promise(res=>setTimeout(()=>callAI("openai", 1200).then(res).catch(()=>res(null)), 1000)),
+            new Promise(res=>setTimeout(()=>callAI("mistral", 1200).then(res).catch(()=>res(null)), 2000)),
+          ];
+          for(const p of attempts) {
+            try {
+              const r = await Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(),12000))]);
+              if(r && r.trim()) { reply = r; break; }
+            } catch(e) {}
           }
-          if(!reply) { try { reply = await callAI("openai"); } catch(e){} }
           if(!reply || reply.trim()==="") {
-            reply = "Братик, сервер завис 😔 Попробуй написать ещё раз — обычно помогает!";
+            reply = "Что-то пошло не так, попробуй ещё раз 🔄";
           }
           const am = {id:Date.now()+1,from:"them",text:reply,time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})};
           setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,lastMsg:reply.slice(0,50),messages:[...x.messages,am].slice(-100)}:x));
@@ -2972,7 +3290,7 @@ function App() {
       fileType:"sticker",
       senderName: (ac.isChannel||ac.isGroup) ? (user.displayName||user.username) : null,
     };
-    setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,lastMsg:"Стикер "+emoji,time:t("nowTime"),messages:[...x.messages,nm]}:x));
+    bumpChat(chatId,{lastMsg:"Стикер "+emoji,time:nm.time,messages:[...(chats.find(c=>String(c.id)===String(chatId))?.messages||[]),nm]});
     setEmojiPanel(false);
     playMsg();
     deliverToRecipient(ac, nm);
@@ -3064,148 +3382,162 @@ function App() {
 
   /* ─── AUTH ─── */
   if(screen==="auth") return (
-    <div className="auth-scroll" style={{background:T.aG,position:"relative",overflow:"hidden"}}>
-      <style>{css}</style>
+    <div style={{
+      position:"fixed",inset:0,
+      background:TH.dark.bg,
+      display:"flex",flexDirection:"column",
+      alignItems:"center",justifyContent:"center",
+      overflowY:"auto",WebkitOverflowScrolling:"touch",
+      padding:"env(safe-area-inset-top) 0 env(safe-area-inset-bottom)",
+    }}>
+      <style>{css}
+        {`.auth-input{display:block;width:100%;padding:15px 18px;font-size:15px;border-radius:16px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:#ECF0FF;outline:none;font-family:inherit;transition:border-color 0.2s,background 0.2s;box-sizing:border-box;}
+        .auth-input:focus{border-color:${A.main};background:rgba(255,255,255,0.09);}
+        .auth-input::placeholder{color:rgba(236,240,255,0.28);}
+        .auth-btn{display:block;width:100%;padding:16px;font-size:16px;font-weight:800;border-radius:18px;border:none;cursor:pointer;font-family:'Syne',sans-serif;letter-spacing:0.3px;transition:all 0.2s;}`}
+      </style>
 
       {/* BG orbs */}
-      <div style={{position:"fixed",width:"600px",height:"600px",borderRadius:"50%",background:A.glow,filter:"blur(170px)",top:"-220px",right:"-180px",opacity:0.32,animation:"orbFloat 8s ease-in-out infinite",pointerEvents:"none",zIndex:0}}/>
-      <div style={{position:"fixed",width:"500px",height:"500px",borderRadius:"50%",background:A.glow,filter:"blur(140px)",bottom:"-160px",left:"-120px",opacity:0.18,animation:"orbFloat 11s ease-in-out infinite 3s",pointerEvents:"none",zIndex:0}}/>
-      <div style={{position:"fixed",width:"300px",height:"300px",borderRadius:"50%",background:A.main+"44",filter:"blur(100px)",top:"38%",left:"50%",transform:"translateX(-50%)",opacity:0.1,animation:"orbFloat 7s ease-in-out infinite 1.5s",pointerEvents:"none",zIndex:0}}/>
-      <div style={{position:"fixed",inset:0,backgroundImage:"radial-gradient("+T.bo+"66 1px,transparent 1px)",backgroundSize:"30px 30px",opacity:0.5,pointerEvents:"none",zIndex:0}}/>
+      <div style={{position:"fixed",width:"400px",height:"400px",borderRadius:"50%",background:A.glow,filter:"blur(120px)",top:"-150px",right:"-100px",opacity:0.3,pointerEvents:"none"}}/>
+      <div style={{position:"fixed",width:"300px",height:"300px",borderRadius:"50%",background:A.glow,filter:"blur(100px)",bottom:"-100px",left:"-80px",opacity:0.15,pointerEvents:"none"}}/>
 
-      <div style={{width:"100%",maxWidth:"370px",position:"relative",zIndex:1,padding:"24px 16px"}}>
+      <div style={{width:"100%",maxWidth:"420px",padding:"24px 20px",position:"relative",zIndex:1}}>
 
         {/* Logo */}
-        <div style={{textAlign:"center",marginBottom:"36px",animation:"fadeIn 0.7s cubic-bezier(.16,1,.3,1) both"}}>
-          <div style={{position:"relative",display:"inline-block",marginBottom:"24px"}}>
-            <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"118px",height:"118px",borderRadius:"50%",border:"1.5px solid "+A.main+"28",animation:"pulse 3s ease-in-out infinite",pointerEvents:"none"}}/>
-            <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"152px",height:"152px",borderRadius:"50%",border:"1px solid "+A.main+"10",animation:"pulse 3s ease-in-out infinite 0.8s",pointerEvents:"none"}}/>
-            <div style={{width:"90px",height:"90px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",borderRadius:"30px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"42px",margin:"0 auto",boxShadow:"0 28px 64px "+A.glow+",0 0 0 1px "+A.main+"18",position:"relative",zIndex:1}}>
+        {authMode==="choice" && (
+          <div style={{textAlign:"center",marginBottom:"40px",animation:"fadeIn 0.5s cubic-bezier(.16,1,.3,1)"}}>
+            <div style={{width:"88px",height:"88px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",borderRadius:"28px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"40px",margin:"0 auto 20px",boxShadow:"0 24px 60px "+A.glow+"88",position:"relative"}}>
               ✈️
-              <div style={{position:"absolute",inset:0,borderRadius:"30px",background:"linear-gradient(135deg,rgba(255,255,255,0.15),transparent)",pointerEvents:"none"}}/>
+              <div style={{position:"absolute",inset:0,borderRadius:"28px",background:"linear-gradient(135deg,rgba(255,255,255,0.15),transparent)",pointerEvents:"none"}}/>
+            </div>
+            <h1 style={{color:"#ECF0FF",fontSize:"32px",fontWeight:900,letterSpacing:"-1.5px",margin:"0 0 6px",fontFamily:"'Syne',sans-serif"}}>METIKENGER</h1>
+            <p style={{color:"rgba(236,240,255,0.4)",fontSize:"12px",fontWeight:700,letterSpacing:"3px",margin:0}}>БЫСТРО · УМНО · КРАСИВО</p>
+          </div>
+        )}
+
+        {/* Back button */}
+        {(authMode==="register"||authMode==="login") && (
+          <button onClick={()=>{setAuthMode("choice");setFerr("");setForm({u:"",name:"",p:"",p2:"",});}}
+            style={{background:"none",border:"none",color:A.main,cursor:"pointer",fontSize:"14px",marginBottom:"18px",padding:"6px 0",fontWeight:700,display:"flex",alignItems:"center",gap:"6px",opacity:0.9}}>
+            ← Назад
+          </button>
+        )}
+
+        {/* Title for forms */}
+        {(authMode==="register"||authMode==="login") && (
+          <div style={{marginBottom:"24px",animation:"fadeIn 0.3s cubic-bezier(.16,1,.3,1)"}}>
+            <h2 style={{color:"#ECF0FF",fontWeight:900,fontSize:"26px",margin:"0 0 6px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.5px"}}>
+              {authMode==="register"?"Создать аккаунт":"С возвращением"}
+            </h2>
+            <p style={{color:"rgba(236,240,255,0.4)",fontSize:"13px",fontWeight:500,margin:0}}>
+              {authMode==="register"?"Начни общаться уже сейчас":"Войди в свой аккаунт"}
+            </p>
+          </div>
+        )}
+
+        {/* Choice buttons */}
+        {authMode==="choice" && (
+          <div style={{display:"flex",flexDirection:"column",gap:"12px",animation:"fadeIn 0.5s cubic-bezier(.16,1,.3,1) 0.1s both"}}>
+            <button className="auth-btn" onClick={()=>setAuthMode("register")}
+              style={{background:"linear-gradient(135deg,"+A.main+","+A.dark+")",color:"#fff",boxShadow:"0 8px 28px "+A.glow+"66"}}>
+              🚀 Создать аккаунт
+            </button>
+            <button className="auth-btn" onClick={()=>setAuthMode("login")}
+              style={{background:"rgba(255,255,255,0.07)",color:"#ECF0FF",border:"1.5px solid rgba(255,255,255,0.12)"}}>
+              🔑 Войти
+            </button>
+          </div>
+        )}
+
+        {/* Register / Login form */}
+        {(authMode==="register"||authMode==="login") && (
+          <div style={{animation:"fadeIn 0.3s cubic-bezier(.16,1,.3,1)",display:"flex",flexDirection:"column",gap:"14px"}}>
+
+            {authMode==="register" && (
+              <div>
+                <div style={{color:"rgba(236,240,255,0.45)",fontSize:"11px",fontWeight:700,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"8px"}}>👤 Имя</div>
+                <input className="auth-input" type="text" placeholder="Как тебя зовут?" value={form.name||""}
+                  onChange={e=>setForm({...form,name:e.target.value.slice(0,32)})}
+                  onKeyDown={e=>e.key==="Enter"&&doReg()} autoComplete="name"/>
+              </div>
+            )}
+
+            <div>
+              <div style={{color:"rgba(236,240,255,0.45)",fontSize:"11px",fontWeight:700,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"8px"}}>🔑 Логин</div>
+              <div style={{position:"relative"}}>
+                {authMode==="register"&&<span style={{position:"absolute",left:"16px",top:"50%",transform:"translateY(-50%)",color:"rgba(236,240,255,0.4)",fontWeight:700,fontSize:"16px",zIndex:1,pointerEvents:"none"}}>@</span>}
+                <input className="auth-input" type="text"
+                  placeholder={authMode==="register"?"только a-z, 0-9, _":"твой логин"}
+                  value={form.u}
+                  onChange={e=>{const v=authMode==="register"?e.target.value.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase():e.target.value;setForm({...form,u:v});}}
+                  onKeyDown={e=>e.key==="Enter"&&(authMode==="register"?doReg():doLog())}
+                  autoComplete="username"
+                  style={{paddingLeft:authMode==="register"?"36px":"18px"}}/>
+              </div>
+              {authMode==="register"&&<div style={{color:"rgba(236,240,255,0.28)",fontSize:"11px",marginTop:"5px",paddingLeft:"4px"}}>Только a–z, 0–9 и _ · мин. 3 символа</div>}
+            </div>
+
+            <div>
+              <div style={{color:"rgba(236,240,255,0.45)",fontSize:"11px",fontWeight:700,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"8px"}}>🔒 Пароль</div>
+              <input className="auth-input" type="password" placeholder={authMode==="register"?"мин. 6 символов":"твой пароль"} value={form.p}
+                onChange={e=>{const v=e.target.value.replace(/[^ -~]/g,"");setForm({...form,p:v});}}
+                onKeyDown={e=>e.key==="Enter"&&(authMode==="register"?doReg():doLog())}
+                autoComplete={authMode==="register"?"new-password":"current-password"}/>
+              {authMode==="register" && form.p.length>0 && (()=>{
+                const str=pwStrength(form.p);
+                const colors=["#F87171","#F97316","#EAB308","#22C55E","#10B981","#10B981"];
+                const labels=[t("pwVeryWeak"),t("pwWeak"),t("pwMedium"),t("pwGood"),t("pwStrong"),t("pwExcellent")];
+                return (
+                  <div style={{marginTop:"8px"}}>
+                    <div style={{display:"flex",gap:"3px",marginBottom:"4px"}}>
+                      {[0,1,2,3,4].map(i=>(<div key={i} style={{flex:1,height:"3px",borderRadius:"3px",background:i<str?colors[str]:"rgba(255,255,255,0.1)",transition:"background 0.3s"}}/>))}
+                    </div>
+                    <div style={{color:colors[str],fontSize:"11px",fontWeight:700}}>{labels[str]}</div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {authMode==="register" && (
+              <div>
+                <div style={{color:"rgba(236,240,255,0.45)",fontSize:"11px",fontWeight:700,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:"8px"}}>🔒 Повтори пароль</div>
+                <input className="auth-input" type="password" placeholder="повтори пароль" value={form.p2||""}
+                  onChange={e=>setForm({...form,p2:e.target.value.replace(/[^ -~]/g,"")})}
+                  onKeyDown={e=>e.key==="Enter"&&doReg()}
+                  autoComplete="new-password"
+                  style={{borderColor:form.p2&&form.p2!==form.p?"rgba(248,113,113,0.6)":undefined}}/>
+                {form.p2 && form.p2!==form.p && <div style={{color:"#F87171",fontSize:"11px",fontWeight:700,marginTop:"5px"}}>⚠️ Пароли не совпадают</div>}
+                {form.p2 && form.p2===form.p && <div style={{color:"#22C55E",fontSize:"11px",fontWeight:700,marginTop:"5px"}}>✅ Пароли совпадают</div>}
+              </div>
+            )}
+
+            {ferr && (
+              <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:"14px",padding:"12px 16px",color:"#F87171",fontSize:"13px",fontWeight:600,display:"flex",alignItems:"center",gap:"8px"}}>
+                <span>⚠️</span><span>{ferr}</span>
+              </div>
+            )}
+
+            <button className="auth-btn" onClick={authMode==="register"?doReg:doLog} disabled={authLoading}
+              style={{background:authLoading?"rgba(255,255,255,0.06)":"linear-gradient(135deg,"+A.main+","+A.dark+")",
+                color:authLoading?"rgba(236,240,255,0.3)":"#fff",
+                boxShadow:authLoading?"none":"0 8px 28px "+A.glow+"66",
+                marginTop:"4px",opacity:authLoading?0.7:1}}>
+              {authLoading?"⏳ Загрузка...":authMode==="register"?"🚀 Зарегистрироваться":"🔑 Войти"}
+            </button>
+
+            <div style={{textAlign:"center",paddingTop:"4px"}}>
+              {authMode==="register"
+                ? <><span style={{color:"rgba(236,240,255,0.4)",fontSize:"13px"}}>Уже есть аккаунт? </span>
+                    <button onClick={()=>{setAuthMode("login");setFerr("");setForm({u:"",name:"",p:"",p2:""});}} style={{background:"none",border:"none",color:A.main,cursor:"pointer",fontSize:"13px",fontWeight:700,padding:0}}>Войти →</button></>
+                : <><span style={{color:"rgba(236,240,255,0.4)",fontSize:"13px"}}>Нет аккаунта? </span>
+                    <button onClick={()=>{setAuthMode("register");setFerr("");setForm({u:"",name:"",p:"",p2:""});}} style={{background:"none",border:"none",color:A.main,cursor:"pointer",fontSize:"13px",fontWeight:700,padding:0}}>Создать →</button></>
+              }
             </div>
           </div>
-          <h1 style={{color:T.tx,fontSize:"34px",fontWeight:900,letterSpacing:"-2.2px",marginBottom:"7px",fontFamily:"'Syne',sans-serif",lineHeight:1}}>METIKENGER</h1>
-          <p style={{color:T.mu,fontSize:"9px",fontWeight:800,letterSpacing:"3.5px",margin:0,opacity:0.7}}>{t("appSlogan")}</p>
-        </div>
+        )}
 
-        {/* Card */}
-        <div style={{background:T.aC,WebkitBackdropFilter:"blur(48px)",backdropFilter:"blur(48px)",WebkitBackdropFilter:"blur(48px)",borderRadius:"28px",padding:"28px 24px",border:"1px solid "+T.aCB,boxShadow:"0 40px 100px rgba(0,0,0,0.44)",position:"relative",overflow:"hidden",animation:"fadeIn 0.7s cubic-bezier(.16,1,.3,1) 0.15s both"}}>
-          <div style={{position:"absolute",top:"-40px",right:"-30px",width:"160px",height:"160px",borderRadius:"50%",background:A.glow,filter:"blur(60px)",opacity:0.16,pointerEvents:"none"}}/>
+        <p style={{textAlign:"center",color:"rgba(236,240,255,0.2)",fontSize:"10px",marginTop:"32px",fontWeight:500}}>METIKENGER · Данные хранятся в облаке</p>
 
-          {authMode==="choice" && (
-            <div style={{animation:"fadeIn 0.35s cubic-bezier(.16,1,.3,1) both"}}>
-              <button className="gb" onClick={()=>setAuthMode("register")} style={{display:"block",width:"100%",padding:"16px",marginBottom:"12px",fontSize:"15px",fontWeight:700}}>{t("createAccount")}</button>
-              <button className="ghs" onClick={()=>setAuthMode("login")} style={{display:"block",width:"100%",padding:"16px",fontSize:"15px",color:T.b2T,border:"1.5px solid "+T.b2B,fontWeight:600}}>{t("login")}</button>
-            </div>
-          )}
-
-          {(authMode==="register"||authMode==="login") && (
-            <div style={{animation:"fadeIn 0.32s cubic-bezier(.16,1,.3,1) both"}}>
-              <button onClick={()=>{setAuthMode("choice");setFerr("");setForm({u:"",name:"",p:""});}}
-                style={{background:"none",border:"none",color:A.main,cursor:"pointer",fontSize:"13px",marginBottom:"20px",padding:0,fontWeight:700,display:"flex",alignItems:"center",gap:"4px",opacity:0.85}}
-                onMouseEnter={e=>e.currentTarget.style.opacity="1"}
-                onMouseLeave={e=>e.currentTarget.style.opacity="0.85"}>
-                ← {t("back")}
-              </button>
-              <div style={{color:T.tx,fontSize:"21px",fontWeight:900,marginBottom:"20px",letterSpacing:"-0.5px",fontFamily:"'Syne',sans-serif"}}>
-                {authMode==="register" ? t("register") : t("welcome")}
-              </div>
-
-              {authMode==="register" && (
-                <div style={{marginBottom:"13px"}}>
-                  <div style={{color:T.mu,fontSize:"9px",fontWeight:700,letterSpacing:"1.5px",marginBottom:"7px",textTransform:"uppercase"}}>👤 ИМЯ</div>
-                  <input className="ai" type="text" placeholder="Как тебя зовут?" value={form.name}
-                    onChange={e=>setForm({...form,name:e.target.value.slice(0,32)})}
-                    onKeyDown={e=>e.key==="Enter"&&doReg()} autoComplete="name"
-                    style={{display:"block",width:"100%",padding:"14px 15px",fontSize:"14px"}}/>
-                </div>
-              )}
-
-              <div style={{marginBottom:"13px"}}>
-                <div style={{color:T.mu,fontSize:"9px",fontWeight:700,letterSpacing:"1.5px",marginBottom:"7px",textTransform:"uppercase"}}>{authMode==="register"?"🔑 ЛОГИН":t("username")}</div>
-                <div style={{position:"relative"}}>
-                  {authMode==="register"&&<span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",color:T.mu,fontWeight:700,fontSize:"15px",pointerEvents:"none",zIndex:1}}>@</span>}
-                  <input className="ai" type="text" placeholder={authMode==="register"?"a-z, 0-9, _":""} value={form.u}
-                    onChange={e=>{const v=authMode==="register"?e.target.value.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase():e.target.value;setForm({...form,u:v});}}
-                    onKeyDown={e=>e.key==="Enter"&&(authMode==="register"?doReg():doLog())} autoComplete="username"
-                    style={{display:"block",width:"100%",padding:"14px 15px",paddingLeft:authMode==="register"?"30px":"15px",fontSize:"14px"}}/>
-                </div>
-                {authMode==="register"&&<div style={{color:T.mu,fontSize:"10px",marginTop:"5px",paddingLeft:"2px",fontWeight:500}}>Только a–z, 0–9 и _ · мин. 3 символа</div>}
-              </div>
-
-              <div style={{marginBottom:"6px"}}>
-                <div style={{color:T.mu,fontSize:"9px",fontWeight:700,letterSpacing:"1.5px",marginBottom:"7px",textTransform:"uppercase"}}>{t("password")}</div>
-                <input className="ai" type="password" placeholder="" value={form.p}
-                  onChange={e=>{const v=authMode==="register"?e.target.value.replace(/[^ -~]/g,""):e.target.value;setForm({...form,p:v});}}
-                  onKeyDown={e=>e.key==="Enter"&&(authMode==="register"?doReg():doLog())}
-                  autoComplete={authMode==="register"?"new-password":"current-password"}
-                  style={{display:"block",width:"100%",padding:"14px 15px",fontSize:"14px"}}/>
-                {authMode==="register" && form.p.length>0 && (()=>{
-                  const str=pwStrength(form.p);
-                  const colors=["#F87171","#F97316","#EAB308","#22C55E","#10B981","#10B981"];
-                  const labels=[t("pwVeryWeak"),t("pwWeak"),t("pwMedium"),t("pwGood"),t("pwStrong"),t("pwExcellent")];
-                  return (
-                    <div style={{marginTop:"8px"}}>
-                      <div style={{display:"flex",gap:"3px",marginBottom:"4px"}}>
-                        {[0,1,2,3,4].map(i=>(<div key={i} className="pw-bar" style={{flex:1,height:"3px",borderRadius:"3px",background:i<str?colors[str]:T.bo,transition:"background 0.3s"}}/>))}
-                      </div>
-                      <div style={{color:colors[str],fontSize:"10px",fontWeight:700}}>{labels[str]}</div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {authMode==="register" && (
-                <div style={{marginBottom:"6px"}}>
-                  <div style={{color:T.mu,fontSize:"9px",fontWeight:700,letterSpacing:"1.5px",marginBottom:"7px",textTransform:"uppercase"}}>🔒 ПОВТОРИ ПАРОЛЬ</div>
-                  <input className="ai" type="password" placeholder="Повтори пароль" value={form.p2||""}
-                    onChange={e=>setForm({...form,p2:e.target.value.replace(/[^ -~]/g,"")})}
-                    onKeyDown={e=>e.key==="Enter"&&doReg()}
-                    autoComplete="new-password"
-                    style={{display:"block",width:"100%",padding:"14px 15px",fontSize:"14px",
-                      borderColor: form.p2&&form.p2!==form.p?"#F87171":undefined}}/>
-                  {form.p2 && form.p2!==form.p && (
-                    <div style={{color:"#F87171",fontSize:"10px",fontWeight:700,marginTop:"5px"}}>⚠️ Пароли не совпадают</div>
-                  )}
-                  {form.p2 && form.p2===form.p && (
-                    <div style={{color:"#22C55E",fontSize:"10px",fontWeight:700,marginTop:"5px"}}>✅ Пароли совпадают</div>
-                  )}
-                </div>
-              )}
-
-              {ferr && <div style={{color:"#F87171",background:"rgba(239,68,68,0.09)",padding:"11px 14px",borderRadius:"13px",fontSize:"12px",fontWeight:700,marginBottom:"14px",marginTop:"10px",border:"1px solid rgba(239,68,68,0.22)",display:"flex",alignItems:"center",gap:"7px"}}><span>⚠️</span><span>{ferr}</span></div>}
-
-              <button className="gb" onClick={authMode==="register"?doReg:doLog} style={{display:"block",width:"100%",padding:"16px",fontSize:"15px",marginTop:"16px",fontWeight:700}}>
-                {authLoading?"⏳ Загрузка...":authMode==="register"?t("doRegister"):t("doLogin")}
-              </button>
-
-              {authMode==="login" && <div style={{textAlign:"center",marginTop:"12px",color:T.mu,fontSize:"10px",fontWeight:500}}>{t("loginAttemptHint")}</div>}
-              {authMode==="register" && (
-                <div style={{textAlign:"center",marginTop:"16px",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
-                  <span style={{color:T.mu,fontSize:"12px"}}>Уже есть аккаунт?</span>
-                  <button onClick={()=>{setAuthMode("login");setFerr("");setForm({u:"",name:"",p:""});}} style={{background:"none",border:"none",color:A.main,cursor:"pointer",fontSize:"13px",fontWeight:700,padding:0}}>Войти →</button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <p style={{textAlign:"center",color:T.mu,fontSize:"10px",marginTop:"20px",fontWeight:500,opacity:0.5}}>{t("localData")}</p>
-        <div style={{textAlign:"center",marginTop:"10px"}}>
-          <button onClick={async()=>{
-            try {
-              const testKey = "test_" + Date.now();
-              const writeRes = await fetch(FIREBASE_URL + "/ping/" + testKey + ".json", {method:"PUT",headers:{"Content-Type":"application/json"},body:'"ok"'});
-              const readRes = await fetch(FIREBASE_URL + "/ping/" + testKey + ".json", {cache:"no-store"});
-              const val = await readRes.json();
-              if(val === "ok") alert("✅ Firebase работает! Запись и чтение успешны.\n\nТеперь регистрируйся и входи с любого устройства.");
-              else alert("⚠️ Запись прошла но чтение вернуло: " + JSON.stringify(val) + "\nСтатус записи: " + writeRes.status);
-            } catch(e){ alert("❌ Ошибка соединения: " + e.message + "\n\nПроверь интернет и правила Firebase."); }
-          }} style={{background:"none",border:"1px solid "+T.bo,borderRadius:"12px",padding:"7px 16px",color:T.mu,fontSize:"11px",cursor:"pointer",fontWeight:600}}>
-            🔧 Проверить соединение
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -3349,24 +3681,50 @@ function App() {
               }
             </div>
             {/* Кнопки */}
-            <div style={{display:"flex",gap:"20px",justifyContent:"center",alignItems:"center"}}>
+            <div style={{display:"flex",gap:"24px",justifyContent:"center",alignItems:"flex-end"}}>
               {callState==="active"&&(
-                <button onClick={toggleMute}
-                  style={{width:"64px",height:"64px",borderRadius:"50%",border:"none",background:callMuted?"rgba(239,68,68,0.25)":"rgba(255,255,255,0.1)",color:callMuted?"#F87171":"#fff",fontSize:"22px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid "+(callMuted?"rgba(239,68,68,0.4)":"rgba(255,255,255,0.15)"),transition:"all 0.2s"}}>
-                  {callMuted?"🔇":"🎙️"}
-                </button>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
+                  <button onClick={toggleMute}
+                    style={{width:"64px",height:"64px",borderRadius:"50%",border:"none",
+                      background:callMuted?"rgba(239,68,68,0.3)":"rgba(255,255,255,0.12)",
+                      color:callMuted?"#F87171":"#fff",cursor:"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      border:"1.5px solid "+(callMuted?"rgba(239,68,68,0.5)":"rgba(255,255,255,0.2)"),
+                      transition:"all 0.2s",fontSize:"24px"}}>
+                    {callMuted?"🔇":"🎙️"}
+                  </button>
+                  <span style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",fontWeight:600}}>{callMuted?"Микрофон выкл":"Микрофон"}</span>
+                </div>
               )}
-              <button onClick={()=>endCall()}
-                style={{width:"72px",height:"72px",borderRadius:"50%",border:"none",background:"linear-gradient(135deg,#EF4444,#DC2626)",color:"#fff",fontSize:"26px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 28px rgba(239,68,68,0.5)",transition:"all 0.2s"}}
-                onMouseEnter={e=>e.currentTarget.style.transform="scale(1.08)"}
-                onMouseLeave={e=>e.currentTarget.style.transform=""}>
-                📵
-              </button>
-              {callState==="active"&&(
-                <button onClick={()=>setCallSpeaker(v=>!v)}
-                  style={{width:"64px",height:"64px",borderRadius:"50%",border:"none",background:callSpeaker?"rgba(99,102,241,0.25)":"rgba(255,255,255,0.1)",color:callSpeaker?"#818CF8":"#fff",fontSize:"22px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid "+(callSpeaker?"rgba(99,102,241,0.4)":"rgba(255,255,255,0.15)"),transition:"all 0.2s"}}>
-                  {callSpeaker?"🔊":"🔈"}
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
+                <button onClick={()=>endCall()}
+                  style={{width:"72px",height:"72px",borderRadius:"50%",border:"none",
+                    background:"linear-gradient(135deg,#EF4444,#DC2626)",color:"#fff",
+                    fontSize:"28px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
+                    boxShadow:"0 8px 28px rgba(239,68,68,0.5)",transition:"all 0.2s"}}
+                  onMouseEnter={e=>e.currentTarget.style.transform="scale(1.08)"}
+                  onMouseLeave={e=>e.currentTarget.style.transform=""}>
+                  📵
                 </button>
+                <span style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",fontWeight:600}}>Завершить</span>
+              </div>
+              {callState==="active"&&(
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
+                  <button onClick={()=>{
+                    const newVal=!callSpeaker;
+                    setCallSpeaker(newVal);
+                    if(remoteAudioRef.current) remoteAudioRef.current.volume=newVal?1:0;
+                  }}
+                    style={{width:"64px",height:"64px",borderRadius:"50%",border:"none",
+                      background:callSpeaker?"rgba(99,102,241,0.3)":"rgba(255,255,255,0.12)",
+                      color:callSpeaker?"#818CF8":"rgba(255,255,255,0.4)",cursor:"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      border:"1.5px solid "+(callSpeaker?"rgba(99,102,241,0.5)":"rgba(255,255,255,0.2)"),
+                      transition:"all 0.2s",fontSize:"24px"}}>
+                    {callSpeaker?"🔊":"🔈"}
+                  </button>
+                  <span style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",fontWeight:600}}>{callSpeaker?"Звук вкл":"Звук выкл"}</span>
+                </div>
               )}
             </div>
           </div>
@@ -3421,17 +3779,17 @@ function App() {
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px",marginBottom:"28px"}}>
               {[
                 {c:"",label:"По умолч."},
-                {c:"#FFFFFF",label:"Белый"},
-                {c:"#6366F1",label:"Индиго"},
                 {c:"#EC4899",label:"Розовый"},
                 {c:"#22C55E",label:"Зелёный"},
                 {c:"#F59E0B",label:"Жёлтый"},
                 {c:"#06B6D4",label:"Голубой"},
                 {c:"#EF4444",label:"Красный"},
-                {c:"#8B5CF6",label:"Фиолет."},
                 {c:"#F97316",label:"Оранжев."},
                 {c:"#14B8A6",label:"Бирюза"},
                 {c:"#3B82F6",label:"Синий"},
+                {c:"#A3E635",label:"Лайм"},
+                {c:"#FB7185",label:"Коралл"},
+                {c:"#FF6B35",label:"Закат"},
               ].map((item,i)=>{
                 const sel=pf.nameColor===item.c;
                 return (
@@ -3750,6 +4108,7 @@ function App() {
             {id:"settings",icon:"⚙️",label:t("settings")},
             {id:"premium",icon:"⭐", label:t("premium")},
             {id:"market", icon:"🛒", label:"Рынок", soon:true},
+            ...(user?.username==="metik"?[{id:"admin",icon:"🛡️",label:"Админ"}]:[]),
           ].map((it,idx)=>(
             <button key={it.id} className={"sb "+(tab===it.id?"on":"")}
               onClick={()=>{playClick();setTab(it.id);setChatId(null);setSidebar(false);setSPage("main");}}
@@ -3789,6 +4148,7 @@ function App() {
           }} style={{color:"#F87171"}}>
             <span style={{fontSize:"20px",width:"28px",textAlign:"center"}}>🚪</span><span>{t("logout")}</span>
           </button>
+
         </div>
       </div>
 
@@ -3863,6 +4223,10 @@ function App() {
                     const isActive = String(chatId)===String(ch.id);
                     return (
                       <div key={ch.id} onClick={()=>openChat(ch.id)}
+                        onContextMenu={e=>{e.preventDefault();e.stopPropagation();setChatCtxMenu({chat:ch,x:e.clientX,y:e.clientY});}}
+                        onTouchStart={e=>{chatLongPressRef.current=setTimeout(()=>{const t=e.touches[0];setChatCtxMenu({chat:ch,x:t.clientX,y:t.clientY});},600);}}
+                        onTouchEnd={()=>clearTimeout(chatLongPressRef.current)}
+                        onTouchMove={()=>clearTimeout(chatLongPressRef.current)}
                         style={{display:"flex",alignItems:"center",gap:"13px",padding:"9px 10px",
                           borderRadius:"18px",marginBottom:"2px",cursor:"pointer",
                           background:isActive?"linear-gradient(135deg,"+A.main+"1c,"+A.dark+"0e)":"transparent",
@@ -3874,14 +4238,24 @@ function App() {
                         onMouseLeave={e=>{if(!isActive){e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor="transparent";e.currentTarget.style.transform="";}}}>
                         {/* Avatar */}
                         <div style={{position:"relative",flexShrink:0}}>
-                          <div style={{width:"52px",height:"52px",borderRadius:"17px",background:ch.color,
-                            display:"flex",alignItems:"center",justifyContent:"center",
-                            fontSize:"21px",fontWeight:900,color:"#fff",
-                            boxShadow:isActive?"0 6px 22px "+ch.color+"70":"0 3px 10px "+ch.color+"30",
-                            overflow:"hidden",transition:"all 0.22s cubic-bezier(.16,1,.3,1)",
-                            border:isActive?"2.5px solid "+A.main+"60":"2px solid transparent"}}>
-                            {ch.avatarImg?<img src={ch.avatarImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span>{ch.avatar}</span>}
-                          </div>
+                          {(()=>{
+                            const freshUser = !ch.isAI&&!ch.isChannel&&!ch.isGroup&&ch.username ? cloudUsers.find(u=>u.username===ch.username) : null;
+                            const avImg = freshUser?.avatarImg || ch.avatarImg;
+                            const avLetter = freshUser?.avatar || ch.avatar;
+                            const avColor = freshUser?.color || ch.color;
+                            const avBorder = freshUser?.avatarBorder || ch.avatarBorder || null;
+                            const borderStyle = isActive ? "2.5px solid "+A.main+"60" : avBorder ? "3px solid "+avBorder : "2px solid transparent";
+                            return (
+                              <div style={{width:"52px",height:"52px",borderRadius:"17px",background:avColor,
+                                display:"flex",alignItems:"center",justifyContent:"center",
+                                fontSize:"21px",fontWeight:900,color:"#fff",
+                                boxShadow:avBorder?"0 0 0 1px "+avBorder+"55,0 3px 10px "+avColor+"30":isActive?"0 6px 22px "+avColor+"70":"0 3px 10px "+avColor+"30",
+                                overflow:"hidden",transition:"all 0.22s cubic-bezier(.16,1,.3,1)",
+                                border:borderStyle}}>
+                                {avImg?<img src={avImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span>{avLetter}</span>}
+                              </div>
+                            );
+                          })()}
                           {ch.isAI && <div style={{position:"absolute",bottom:"-2px",right:"-2px",width:"19px",height:"19px",borderRadius:"8px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"2px solid "+T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px",fontWeight:900,boxShadow:"0 2px 8px "+A.glow}}>✦</div>}
                           {ch.isChannel && !ch.isAI && <div style={{position:"absolute",bottom:"-2px",right:"-2px",width:"19px",height:"19px",borderRadius:"8px",background:"linear-gradient(135deg,#06B6D4,#0891B2)",border:"2px solid "+T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px"}}>📢</div>}
                           {ch.isGroup && <div style={{position:"absolute",bottom:"-2px",right:"-2px",width:"19px",height:"19px",borderRadius:"8px",background:"linear-gradient(135deg,#8B5CF6,#7C3AED)",border:"2px solid "+T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px"}}>👥</div>}
@@ -3890,14 +4264,23 @@ function App() {
                             const on = isOnline(ls);
                             return <div style={{position:"absolute",bottom:"-1px",right:"-1px",width:"12px",height:"12px",borderRadius:"50%",background:on?"#22C55E":"#64748B",border:"2px solid "+T.bg,boxShadow:on?"0 0 7px #22C55E99":"none"}}/>;
                           })()}
-                        </div>
+                        </div>{/* end avatar relative div */}
                         {/* Info */}
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
-                            <span style={{color:isActive?A.main:T.tx,fontWeight:700,fontSize:"14px",
-                              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
-                              maxWidth:"155px",transition:"color 0.18s",letterSpacing:"-0.1px"}}>{ch.name}</span>
-                            <span style={{color:isActive?A.main+"99":T.mu,fontSize:"10px",flexShrink:0,marginLeft:"6px",fontWeight:500,letterSpacing:"0.2px",transition:"color 0.18s"}}>{ch.time}</span>
+                            {(()=>{
+                              const fu2 = !ch.isAI&&!ch.isChannel&&!ch.isGroup&&ch.username ? cloudUsers.find(u=>u.username===ch.username) : null;
+                              const nc = fu2?.nameColor || ch.nameColor || null;
+                              return <span style={{color:isActive?A.main:(nc||T.tx),fontWeight:700,fontSize:"14px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"155px",transition:"color 0.18s",letterSpacing:"-0.1px"}}>{ch.name}</span>;
+                            })()}
+                            <span style={{color:isActive?A.main+"99":T.mu,fontSize:"10px",flexShrink:0,marginLeft:"6px",fontWeight:500,letterSpacing:"0.2px",transition:"color 0.18s"}}>{(()=>{
+                              const msgs = ch.messages||[];
+                              const lastMsg = msgs[msgs.length-1];
+                              const t = lastMsg?.time || ch.time || "";
+                              // Если там "сейчас" или "now" — показываем время из сообщения
+                              if(!t||t==="сейчас"||t==="now") return lastMsg?.time||"";
+                              return t;
+                            })()}</span>
                           </div>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"6px"}}>
                             <span style={{color:T.mu,fontSize:"12px",overflow:"hidden",textOverflow:"ellipsis",
@@ -3960,22 +4343,34 @@ function App() {
                       {cloudChannels.map((ch,idx)=>{
                         const alreadyIn = chats.find(c=>c.isChannel&&(c.channelId===ch.channelId||String(c.id)===String(ch.id)));
                         return (
-                          <div key={ch.channelId} onClick={()=>{
+                          <div key={ch.channelId} onClick={async()=>{
                             if(alreadyIn){ openChat(alreadyIn.id); setSearch(""); return; }
-                            // Вступаем в канал (только чтение)
+                            // Загружаем сообщения канала из Firebase
+                            let chanMsgs = [];
+                            try {
+                              const msgsData = await fbGet("/channel_msgs/"+ch.channelId);
+                              if(msgsData) chanMsgs = Array.isArray(msgsData) ? msgsData.filter(Boolean) : Object.values(msgsData).filter(Boolean);
+                            } catch(e){}
                             const newCh = {
                               id: ch.id||String(Date.now()),
                               name: ch.name, channelId: ch.channelId,
                               avatar: ch.avatar||"📢", avatarImg: ch.avatarImg||null,
                               color: ch.color||A.main,
-                              lastMsg: ch.desc||"Канал", time:"", unread:0,
+                              lastMsg: chanMsgs.length>0?(chanMsgs[chanMsgs.length-1].text||"📎"):(ch.desc||"Канал"),
+                              time: chanMsgs.length>0?chanMsgs[chanMsgs.length-1].time:"",
+                              unread:0,
                               isChannel:true, isAI:false, isOwned:false, desc:ch.desc||"",
-                              messages:[]
+                              messages: chanMsgs
                             };
                             setChats(c=>[newCh,...c]);
                             openChat(newCh.id);
                             setSearch("");
                             toast("📢 Вступил в @"+ch.channelId);
+                            // Сразу сохраняем в Firebase чтобы канал не пропал при перезаходе
+                            setTimeout(()=>{
+                              const updChats = [newCh, ...chats.filter(c=>String(c.id)!==String(newCh.id))];
+                              fbSaveChats(user.username, updChats);
+                            }, 500);
                           }}
                             style={{display:"flex",alignItems:"center",gap:"13px",padding:"9px 10px",borderRadius:"18px",marginBottom:"2px",cursor:"pointer",background:"transparent",border:"1px solid #06B6D422",transition:"all 0.18s"}}
                             onMouseEnter={e=>{e.currentTarget.style.background="#06B6D412";e.currentTarget.style.borderColor="#06B6D444";}}
@@ -4023,9 +4418,9 @@ function App() {
                 <div style={{color:user.nameColor||"#fff",fontWeight:800,fontSize:"22px",letterSpacing:"-0.5px",fontFamily:"'Syne',sans-serif",marginBottom:"4px",textAlign:"center",textShadow:"0 2px 12px rgba(0,0,0,0.4)",wordBreak:"break-word",padding:"0 20px"}}>{dn}</div>
                 <div style={{color:"rgba(255,255,255,0.65)",fontSize:"13px",fontWeight:500,marginBottom:"14px"}}>@{user.username}</div>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",justifyContent:"center",flexWrap:"wrap"}}>
-                  {activeTitle==="creator"&&<div style={{display:"flex",alignItems:"center",gap:"5px",background:"linear-gradient(135deg,rgba(255,215,0,0.25),rgba(255,165,0,0.15))",borderRadius:"20px",padding:"5px 14px",border:"1px solid rgba(255,215,0,0.5)",WebkitBackdropFilter:"blur(8px)",backdropFilter:"blur(8px)",boxShadow:"0 0 16px rgba(255,215,0,0.3)"}}>
+                  {activeTitle==="creator"&&<div style={{display:"flex",alignItems:"center",gap:"5px",background:"linear-gradient(135deg,#FFD700,#FFA500)",borderRadius:"20px",padding:"5px 14px",border:"none",boxShadow:"0 0 18px rgba(255,215,0,0.6),0 2px 8px rgba(0,0,0,0.2)"}}>
                     <span style={{fontSize:"12px"}}>👑</span>
-                    <span style={{color:"#FFD700",fontSize:"11px",fontWeight:800,letterSpacing:"0.5px"}}>CREATOR</span>
+                    <span style={{color:"#000",fontSize:"11px",fontWeight:900,letterSpacing:"0.5px"}}>CREATOR</span>
                   </div>}
                   {activeTitle==="owner"&&<div style={{display:"flex",alignItems:"center",gap:"5px",background:"linear-gradient(135deg,rgba(167,139,250,0.25),rgba(124,58,237,0.15))",borderRadius:"20px",padding:"5px 14px",border:"1px solid rgba(167,139,250,0.5)",WebkitBackdropFilter:"blur(8px)",backdropFilter:"blur(8px)",boxShadow:"0 0 16px rgba(167,139,250,0.3)"}}>
                     <span style={{fontSize:"12px"}}>💎</span>
@@ -4035,7 +4430,7 @@ function App() {
                     <span style={{width:"6px",height:"6px",borderRadius:"50%",background:"#22C55E",boxShadow:"0 0 8px #22C55E",display:"inline-block",animation:"ringPulse 2s infinite"}}/>
                     <span style={{color:"#22C55E",fontSize:"11px",fontWeight:700}}>{t("onlineStatus")}</span>
                   </div>
-                  {prem&&<span style={{background:"linear-gradient(135deg,rgba(255,255,255,0.25),rgba(255,255,255,0.1))",color:"#fff",fontSize:"10px",fontWeight:800,padding:"5px 12px",borderRadius:"20px",border:"1px solid rgba(255,255,255,0.3)",WebkitBackdropFilter:"blur(8px)",backdropFilter:"blur(8px)"}}>✦ PRO</span>}
+                  {prem&&<span style={{background:"linear-gradient(135deg,"+A.main+","+A.dark+")",color:"#fff",fontSize:"10px",fontWeight:900,padding:"5px 14px",borderRadius:"20px",boxShadow:"0 4px 16px "+A.glow+"88",border:"1.5px solid rgba(255,255,255,0.25)",textShadow:"0 1px 4px rgba(0,0,0,0.4)",letterSpacing:"0.5px"}}>✦ PRO</span>}
                 </div>
               </div>
               {/* Кнопка назад */}
@@ -4217,110 +4612,134 @@ function App() {
               const msLeft = nextSpin-mskNow;
               const hLeft = Math.floor(msLeft/3600000);
               const mLeft = Math.floor((msLeft%3600000)/60000);
-              const DRUM = ["🎲","✨","💎","🎲","🎲","✨","🎲","💵","🎲","✨","🎲","🎲","✨","💎","🎲","✨","🎲","💵","🎲","✨"];
+
+              // Символы барабана
+              const DRUM = ["⭐","💫","🎰","💎","⭐","💫","🍀","⭐","💎","💫","⭐","🎰","💫","⭐","💎","🍀","⭐","💫","🎰","💎"];
+
+              // Призы с шансами
+              const PRIZES = [
+                {emoji:"💨", label:"0 страпсов", strapsAmt:0,  prize:"0st",    chance:40, color:"#64748B"},
+                {emoji:"⭐", label:"1 страпс",   strapsAmt:1,  prize:"1st",    chance:40, color:"#94A3B8"},
+                {emoji:"💫", label:"2 страпса",  strapsAmt:2,  prize:"2st",    chance:10, color:A.main},
+                {emoji:"🍀", label:"5 страпсов", strapsAmt:5,  prize:"5st",    chance:4,  color:"#22C55E"},
+                {emoji:"💎", label:"10 страпсов",strapsAmt:10, prize:"10st",   chance:3,  color:"#F59E0B"},
+                {emoji:"💵", label:"100 рублей", strapsAmt:0,  prize:"100руб", chance:1,  color:"#EF4444"},
+              ];
 
               function spin() {
                 if(!canSpin||rouletteSpinning) return;
                 setRouletteSpinning(true); setRouletteResult(null);
                 setTimeout(()=>{
-                  const r=Math.random()*100;
-                  let prize,label,emoji,strapsAmt=0;
-                  if(r<2){prize="100руб";label="100 рублей!";emoji="💵";strapsAmt=0;}
-                  else if(r<10){prize="10st";label="10 страпсов!";emoji="💎";strapsAmt=10;}
-                  else if(r<25){prize="2st";label="2 страпса";emoji="✨";strapsAmt=2;}
-                  else{prize="1st";label="1 страпс";emoji="🎲";strapsAmt=1;}
-                  if(strapsAmt>0) setStraps(s=>s+strapsAmt);
-                  setRouletteResult({prize,label,emoji,strapsAmt});
+                  const r = Math.random()*100;
+                  let cum=0, result=PRIZES[0];
+                  for(const p of PRIZES){ cum+=p.chance; if(r<cum){result=p;break;} }
+                  if(result.strapsAmt>0) setStraps(s=>s+result.strapsAmt);
+                  setRouletteResult(result);
                   setRouletteSpinning(false);
-                  localStorage.setItem("metik_roulette_"+(user?.username||""),todayKey);
-                  toast("🎰 "+label);
-                },3000);
+                  localStorage.setItem("metik_roulette_"+(user?.username||""), todayKey);
+                  toast("🎰 "+result.label);
+                }, 3200);
               }
 
               return (
                 <div style={{borderRadius:"28px",marginBottom:"20px",overflow:"hidden",position:"relative",animation:"fadeIn 0.4s cubic-bezier(.16,1,.3,1)"}}>
-                  {/* Dark bg */}
-                  <div style={{position:"absolute",inset:0,background:"linear-gradient(160deg,#1a0533,#0d0d1a,#001a0d)",borderRadius:"28px"}}/>
-                  {/* Glow orbs */}
-                  <div style={{position:"absolute",top:"-60px",left:"50%",transform:"translateX(-50%)",width:"280px",height:"160px",background:"radial-gradient(ellipse,"+A.main+"88 0%,transparent 70%)",pointerEvents:"none"}}/>
-                  <div style={{position:"absolute",bottom:"-40px",left:"-40px",width:"180px",height:"180px",borderRadius:"50%",background:"#22C55E44",filter:"blur(60px)",opacity:rouletteSpinning?0.8:0.3,transition:"opacity 0.5s",pointerEvents:"none"}}/>
-                  <div style={{position:"absolute",bottom:"-40px",right:"-40px",width:"180px",height:"180px",borderRadius:"50%",background:A.main+"44",filter:"blur(60px)",opacity:rouletteSpinning?0.8:0.3,transition:"opacity 0.5s",pointerEvents:"none"}}/>
-                  <div style={{border:"1.5px solid rgba(255,255,255,0.08)",borderRadius:"28px",position:"relative",zIndex:1,overflow:"hidden"}}>
-                    {/* Top gold line */}
-                    <div style={{height:"2px",background:"linear-gradient(90deg,transparent,#FFD700,#FFA500,#FFD700,transparent)"}}/>
-                    <div style={{padding:"22px 20px 20px"}}>
-                      {/* Header */}
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}}>
+                  {/* Тёмный фон в стиле казино */}
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(160deg,#120a24,#0d1a12,#1a120a)",borderRadius:"28px"}}/>
+                  {/* Блики */}
+                  <div style={{position:"absolute",top:"-60px",left:"50%",transform:"translateX(-50%)",width:"300px",height:"150px",background:"radial-gradient(ellipse,"+A.main+"55 0%,transparent 70%)",pointerEvents:"none",opacity:rouletteSpinning?1:0.5,transition:"opacity 0.5s"}}/>
+                  <div style={{position:"absolute",bottom:"-50px",left:0,width:"200px",height:"200px",borderRadius:"50%",background:"#22C55E33",filter:"blur(60px)",pointerEvents:"none",opacity:rouletteSpinning?0.7:0.2,transition:"opacity 0.5s"}}/>
+                  <div style={{position:"absolute",bottom:"-50px",right:0,width:"200px",height:"200px",borderRadius:"50%",background:A.main+"44",filter:"blur(60px)",pointerEvents:"none",opacity:rouletteSpinning?0.7:0.2,transition:"opacity 0.5s"}}/>
+
+                  <div style={{border:"1.5px solid rgba(255,255,255,0.07)",borderRadius:"28px",position:"relative",zIndex:1,overflow:"hidden"}}>
+                    {/* Золотая полоска сверху */}
+                    <div style={{height:"3px",background:"linear-gradient(90deg,transparent 0%,#8B6914 20%,#FFD700 40%,#FFF8DC 50%,#FFD700 60%,#8B6914 80%,transparent 100%)"}}/>
+
+                    <div style={{padding:"22px 20px 22px"}}>
+                      {/* Заголовок */}
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"22px"}}>
                         <div>
-                          <div style={{color:"#fff",fontWeight:900,fontSize:"19px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.5px"}}>🎰 Ежедневная рулетка</div>
-                          <div style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",marginTop:"3px",fontWeight:500}}>
-                            {canSpin?"Испытай удачу!":"⏳ Через "+hLeft+"ч "+mLeft+"м"}
+                          <div style={{color:"#FFD700",fontWeight:900,fontSize:"20px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.3px",display:"flex",alignItems:"center",gap:"8px",textShadow:"0 0 20px rgba(255,215,0,0.5)"}}>
+                            🎰 Рулетка удачи
+                          </div>
+                          <div style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",marginTop:"4px",fontWeight:500}}>
+                            {canSpin ? "Ежедневный шанс выиграть straps!" : "⏳ Следующий шанс через "+hLeft+"ч "+mLeft+"м"}
                           </div>
                         </div>
                         {canSpin&&!rouletteSpinning&&!rouletteResult&&(
-                          <div style={{display:"flex",alignItems:"center",gap:"5px",background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.35)",borderRadius:"20px",padding:"5px 12px"}}>
-                            <span style={{width:"6px",height:"6px",borderRadius:"50%",background:"#22C55E",display:"inline-block",boxShadow:"0 0 6px #22C55E",animation:"ringPulse 1.5s infinite"}}/>
-                            <span style={{color:"#22C55E",fontSize:"10px",fontWeight:800}}>Доступно</span>
+                          <div style={{display:"flex",alignItems:"center",gap:"5px",background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:"20px",padding:"6px 14px"}}>
+                            <span style={{width:"6px",height:"6px",borderRadius:"50%",background:"#22C55E",display:"inline-block",boxShadow:"0 0 8px #22C55E",animation:"ringPulse 1.5s infinite"}}/>
+                            <span style={{color:"#22C55E",fontSize:"10px",fontWeight:800,letterSpacing:"0.5px"}}>ДОСТУПНО</span>
                           </div>
                         )}
                       </div>
 
                       {/* Барабан */}
-                      <div style={{marginBottom:"20px",position:"relative"}}>
-                        {/* spotlight beam */}
-                        <div style={{position:"absolute",top:"-20px",left:"50%",transform:"translateX(-50%)",width:"220px",height:"80px",background:"radial-gradient(ellipse,"+A.main+(rouletteSpinning?"77":"22")+" 0%,transparent 70%)",pointerEvents:"none",transition:"background 0.5s"}}/>
+                      <div style={{position:"relative",marginBottom:"20px"}}>
+                        {/* Прожектор */}
+                        <div style={{position:"absolute",top:"-10px",left:"50%",transform:"translateX(-50%)",width:"160px",height:"60px",background:"radial-gradient(ellipse,"+A.main+(rouletteSpinning?"66":"22")+" 0%,transparent 70%)",pointerEvents:"none",transition:"background 0.5s",zIndex:0}}/>
                         <div style={{
-                          height:"130px",borderRadius:"20px",overflow:"hidden",position:"relative",
-                          background:"rgba(0,0,0,0.55)",
-                          border:"2px solid "+(rouletteSpinning?"rgba(255,215,0,0.6)":rouletteResult?"rgba(255,215,0,0.9)":"rgba(255,255,255,0.1)"),
-                          boxShadow:rouletteResult?"0 0 30px rgba(255,215,0,0.4),inset 0 0 30px rgba(255,215,0,0.05)":rouletteSpinning?"0 0 20px "+A.glow+"88,inset 0 0 20px "+A.glow+"22":"inset 0 0 20px rgba(0,0,0,0.3)",
+                          height:"140px",borderRadius:"24px",overflow:"hidden",
+                          position:"relative",zIndex:1,
+                          background:"linear-gradient(160deg,rgba(0,0,0,0.7),rgba(0,0,0,0.5))",
+                          border:"2px solid "+(rouletteSpinning?"rgba(255,215,0,0.7)":rouletteResult?"rgba(255,215,0,1)":"rgba(255,255,255,0.08)"),
+                          boxShadow:rouletteResult
+                            ?"0 0 40px rgba(255,215,0,0.4),inset 0 0 30px rgba(255,215,0,0.05)"
+                            :rouletteSpinning
+                            ?"0 0 24px "+A.main+"66,inset 0 0 20px "+A.main+"22"
+                            :"inset 0 4px 20px rgba(0,0,0,0.5)",
                           transition:"all 0.4s"
                         }}>
-                          {/* top/bottom fade */}
-                          <div style={{position:"absolute",top:0,left:0,right:0,height:"40px",background:"linear-gradient(to bottom,rgba(0,0,0,0.85),transparent)",zIndex:2,pointerEvents:"none"}}/>
-                          <div style={{position:"absolute",bottom:0,left:0,right:0,height:"40px",background:"linear-gradient(to top,rgba(0,0,0,0.85),transparent)",zIndex:2,pointerEvents:"none"}}/>
-                          {/* selector lines */}
-                          <div style={{position:"absolute",top:"calc(50% - 30px)",left:"5%",right:"5%",height:"1.5px",background:rouletteResult?"rgba(255,215,0,0.9)":rouletteSpinning?"rgba(255,215,0,0.5)":"rgba(255,255,255,0.12)",zIndex:3,borderRadius:"2px",transition:"background 0.3s"}}/>
-                          <div style={{position:"absolute",top:"calc(50% + 28px)",left:"5%",right:"5%",height:"1.5px",background:rouletteResult?"rgba(255,215,0,0.9)":rouletteSpinning?"rgba(255,215,0,0.5)":"rgba(255,255,255,0.12)",zIndex:3,borderRadius:"2px",transition:"background 0.3s"}}/>
-                          {/* center glow when result */}
-                          {rouletteResult&&<div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at center,rgba(255,215,0,0.08) 0%,transparent 70%)",zIndex:1,pointerEvents:"none"}}/>}
-                          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",zIndex:4}}>
-                            {rouletteSpinning
-                              ? <span style={{fontSize:"62px",animation:"spinDrum 0.09s linear infinite"}}>{DRUM[drumIdx%DRUM.length]}</span>
-                              : rouletteResult
-                                ? <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",animation:"scaleIn 0.45s cubic-bezier(.16,1,.3,1)"}}>
-                                    <span style={{fontSize:"58px",filter:"drop-shadow(0 0 16px rgba(255,215,0,0.8))"}}>{rouletteResult.emoji}</span>
-                                  </div>
-                                : <span style={{fontSize:"58px",opacity:0.2}}>🎰</span>
-                            }
+                          {/* Верх/низ fade */}
+                          <div style={{position:"absolute",top:0,left:0,right:0,height:"44px",background:"linear-gradient(to bottom,rgba(0,0,0,0.9),transparent)",zIndex:2,pointerEvents:"none"}}/>
+                          <div style={{position:"absolute",bottom:0,left:0,right:0,height:"44px",background:"linear-gradient(to top,rgba(0,0,0,0.9),transparent)",zIndex:2,pointerEvents:"none"}}/>
+                          {/* Линии прицела */}
+                          <div style={{position:"absolute",top:"calc(50% - 32px)",left:"6%",right:"6%",height:"1.5px",background:rouletteResult?"rgba(255,215,0,1)":rouletteSpinning?"rgba(255,215,0,0.6)":"rgba(255,255,255,0.1)",zIndex:3,borderRadius:"2px",transition:"background 0.3s",boxShadow:rouletteResult?"0 0 8px rgba(255,215,0,0.8)":"none"}}/>
+                          <div style={{position:"absolute",top:"calc(50% + 30px)",left:"6%",right:"6%",height:"1.5px",background:rouletteResult?"rgba(255,215,0,1)":rouletteSpinning?"rgba(255,215,0,0.6)":"rgba(255,255,255,0.1)",zIndex:3,borderRadius:"2px",transition:"background 0.3s",boxShadow:rouletteResult?"0 0 8px rgba(255,215,0,0.8)":"none"}}/>
+                          {/* Центральное свечение при результате */}
+                          {rouletteResult&&<div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at center,rgba(255,215,0,0.06) 0%,transparent 70%)",zIndex:1,pointerEvents:"none"}}/>}
+                          {/* Контент барабана */}
+                          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:4,gap:"4px"}}>
+                            {rouletteSpinning ? (
+                              <div style={{fontSize:"64px",animation:"spinDrum 0.1s linear infinite"}}>{DRUM[drumIdx%DRUM.length]}</div>
+                            ) : rouletteResult ? (
+                              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",animation:"scaleIn 0.5s cubic-bezier(.16,1,.3,1)"}}>
+                                <div style={{fontSize:"58px",filter:"drop-shadow(0 0 20px rgba(255,215,0,0.9))"}}>{rouletteResult.emoji}</div>
+                                <div style={{color:"#FFD700",fontWeight:900,fontSize:"16px",fontFamily:"'Syne',sans-serif",letterSpacing:"0.5px",textShadow:"0 0 16px rgba(255,215,0,0.8)"}}>{rouletteResult.label}</div>
+                                {rouletteResult.prize==="100руб"&&(
+                                  <div style={{color:"#22C55E",fontSize:"12px",fontWeight:700,background:"rgba(34,197,94,0.15)",padding:"4px 14px",borderRadius:"20px",border:"1px solid rgba(34,197,94,0.4)"}}>Напиши <b>@metik</b>!</div>
+                                )}
+                              </div>
+                            ) : (
+                              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"8px",opacity:0.25}}>
+                                <div style={{fontSize:"58px"}}>🎰</div>
+                                <div style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:600,letterSpacing:"0.5px"}}>НАЖМИ КРУТИТЬ</div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      {/* Result */}
-                      {rouletteResult&&(
-                        <div style={{textAlign:"center",marginBottom:"16px",animation:"fadeIn 0.4s cubic-bezier(.16,1,.3,1)"}}>
-                          <div style={{color:"#FFD700",fontWeight:900,fontSize:"18px",fontFamily:"'Syne',sans-serif",textShadow:"0 0 20px rgba(255,215,0,0.6)"}}>{rouletteResult.label}</div>
-                          {rouletteResult.prize==="100руб"&&(
-                            <div style={{color:"#22C55E",fontSize:"12px",fontWeight:700,marginTop:"6px",background:"rgba(34,197,94,0.12)",display:"inline-block",padding:"4px 14px",borderRadius:"20px",border:"1px solid rgba(34,197,94,0.3)"}}>Напиши <b>@metik</b> для получения!</div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Spin button */}
+                      {/* Кнопка */}
                       <button onClick={spin} disabled={!canSpin||rouletteSpinning}
-                        style={{width:"100%",padding:"16px",borderRadius:"16px",border:"none",
+                        style={{
+                          width:"100%",padding:"17px",borderRadius:"18px",border:"none",
                           cursor:canSpin&&!rouletteSpinning?"pointer":"not-allowed",
                           background:canSpin&&!rouletteSpinning
-                            ?"linear-gradient(135deg,#FFD700,#F59E0B,#D97706)"
-                            :"rgba(255,255,255,0.06)",
-                          color:canSpin&&!rouletteSpinning?"#000":"rgba(255,255,255,0.3)",
-                          fontSize:"15px",fontWeight:900,
-                          boxShadow:canSpin&&!rouletteSpinning?"0 8px 28px rgba(245,158,11,0.5),0 0 0 1px rgba(255,215,0,0.3)":"none",
-                          opacity:!canSpin?0.5:1,
-                          transition:"all 0.2s",fontFamily:"'Syne',sans-serif",letterSpacing:"0.5px",
-                          transform:rouletteSpinning?"scale(0.97)":"scale(1)"}}>
-                        {rouletteSpinning?"⏳ Крутим...":rouletteResult?"✅ Сыграно сегодня":!canSpin?"🕙 Завтра в 10:00 МСК":"🎰 КРУТИТЬ!"}
+                            ?"linear-gradient(135deg,#B8860B,#FFD700,#FFF8DC,#FFD700,#B8860B)"
+                            :"rgba(255,255,255,0.05)",
+                          backgroundSize:"200% 100%",
+                          color:canSpin&&!rouletteSpinning?"#000":"rgba(255,255,255,0.2)",
+                          fontSize:"16px",fontWeight:900,
+                          boxShadow:canSpin&&!rouletteSpinning
+                            ?"0 8px 32px rgba(255,215,0,0.5),0 0 0 1px rgba(255,215,0,0.4)":"none",
+                          opacity:!canSpin?0.4:1,
+                          transition:"all 0.2s",fontFamily:"'Syne',sans-serif",
+                          letterSpacing:"1px",
+                          transform:rouletteSpinning?"scale(0.97)":"scale(1)"
+                        }}
+                        onMouseEnter={e=>{ if(canSpin&&!rouletteSpinning) e.currentTarget.style.transform="scale(1.02)"; }}
+                        onMouseLeave={e=>{ if(!rouletteSpinning) e.currentTarget.style.transform="scale(1)"; }}>
+                        {rouletteSpinning?"⏳ Крутим...":rouletteResult?"✅ Сыграно сегодня":!canSpin?"🕙 Завтра в 10:00 МСК":"🎰 ИСПЫТАТЬ УДАЧУ"}
                       </button>
                     </div>
                   </div>
@@ -4535,6 +4954,11 @@ function App() {
             </div>
           </div>}
 
+          {/* ── ADMIN ── */}
+          {tab==="admin" && user?.username==="metik" && (
+            <AdminPanel T={T} A={A} user={user} chats={chats} setChats={setChats} toast={toast}
+              FIREBASE_URL={FIREBASE_URL} fbGet={fbGet} fbSet={fbSet} genSalt={genSalt} pbkdf2Hash={pbkdf2Hash}/>
+          )}
           {/* ── SETTINGS ── */}
           {tab==="settings" && <div style={{width:"100%"}}><div style={{padding:"16px",maxWidth:"560px",width:"100%",margin:"0 auto"}}>
             {sPage==="main" && <>
@@ -4570,20 +4994,49 @@ function App() {
                       const sel=thId===th.id;
                       return (
                         <div key={th.id}
-                          onClick={()=>{if(lk){toast(t("needPremium"));return;}setThId(th.id);if(th.pr&&prem)setBetaTheme(th.id);else toast(th.icon+" "+th.label);}}
-                          style={{position:"relative",borderRadius:"14px",border:sel?"2px solid "+A.main:"1.5px solid "+T.bo,
-                            background:sel?"linear-gradient(135deg,"+A.main+"18,"+A.dark+"0a)":T.ca,
-                            padding:"12px 8px",textAlign:"center",cursor:lk?"not-allowed":"pointer",
+                          onClick={()=>{if(lk){toast(t("needPremium"));return;}setThId(th.id);try{localStorage.setItem("metik_thId",th.id);}catch(e){}if(th.pr&&prem)setBetaTheme(th.id);else toast(th.icon+" "+th.label);}}
+                          style={{position:"relative",borderRadius:"16px",border:sel?"2px solid "+A.main:"2px solid transparent",
+                            cursor:lk?"not-allowed":"pointer",
                             opacity:lk?0.42:1,transition:"all 0.2s",
-                            boxShadow:sel?"0 0 0 3px "+A.glow+"44":"none",
+                            boxShadow:sel?"0 0 0 3px "+A.glow+"55,0 4px 16px rgba(0,0,0,0.2)":"0 2px 8px rgba(0,0,0,0.12)",
+                            overflow:"hidden",
                             animation:`scaleIn 0.28s cubic-bezier(.16,1,.3,1) ${i*0.04}s both`}}
-                          onMouseEnter={e=>{if(!lk&&!sel)e.currentTarget.style.borderColor=A.main+"77";}}
-                          onMouseLeave={e=>{if(!sel)e.currentTarget.style.borderColor=T.bo;}}>
-                          {lk&&<div style={{position:"absolute",top:"5px",right:"7px",fontSize:"9px"}}>🔒</div>}
-                          {sel&&<div style={{position:"absolute",top:"5px",left:"7px",width:"6px",height:"6px",borderRadius:"50%",background:A.main,boxShadow:"0 0 8px "+A.glow}}/>}
-                          <div style={{fontSize:"20px",marginBottom:"4px"}}>{th.icon}</div>
-                          <div style={{color:sel?A.main:T.tx,fontSize:"10px",fontWeight:sel?800:600}}>{th.label}</div>
-                          {th.pr&&<div style={{color:A.main,fontSize:"8px",fontWeight:700,marginTop:"2px"}}>PRO</div>}
+                          onMouseEnter={e=>{if(!lk&&!sel){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.2)";}}}
+                          onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=sel?"0 0 0 3px "+A.glow+"55,0 4px 16px rgba(0,0,0,0.2)":"0 2px 8px rgba(0,0,0,0.12)";}}>
+                          {/* Превью темы */}
+                          <div style={{background:th.bg,padding:"8px 8px 6px",borderRadius:"14px 14px 0 0"}}>
+                            {/* Мини-шапка */}
+                            <div style={{background:th.pa,borderRadius:"8px",padding:"5px 7px",marginBottom:"5px",display:"flex",alignItems:"center",gap:"4px",border:"1px solid "+th.bo}}>
+                              <div style={{width:"16px",height:"16px",borderRadius:"50%",background:th.bo,flexShrink:0}}/>
+                              <div style={{flex:1}}>
+                                <div style={{height:"3px",background:th.tx,borderRadius:"2px",opacity:0.5,marginBottom:"2px",width:"70%"}}/>
+                                <div style={{height:"2px",background:th.mu,borderRadius:"2px",width:"50%"}}/>
+                              </div>
+                            </div>
+                            {/* Мини-сообщения */}
+                            <div style={{display:"flex",flexDirection:"column",gap:"3px"}}>
+                              <div style={{alignSelf:"flex-end",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",borderRadius:"8px 8px 2px 8px",padding:"3px 6px",maxWidth:"65%"}}>
+                                <div style={{height:"2px",background:"rgba(255,255,255,0.7)",borderRadius:"1px",width:"80%"}}/>
+                              </div>
+                              <div style={{alignSelf:"flex-start",background:th.msg||th.ca,border:"1px solid "+th.bo,borderRadius:"8px 8px 8px 2px",padding:"3px 6px",maxWidth:"55%"}}>
+                                <div style={{height:"2px",background:th.tx,borderRadius:"1px",opacity:0.4,width:"90%"}}/>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Подпись */}
+                          <div style={{background:th.pa,padding:"5px 8px 6px",display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"1px solid "+th.bo}}>
+                            <div style={{display:"flex",alignItems:"center",gap:"3px"}}>
+                              <span style={{fontSize:"10px"}}>{th.icon||"●"}</span>
+                              <span style={{color:sel?A.main:th.tx,fontSize:"9px",fontWeight:700}}>{th.label}</span>
+                            </div>
+                            <div style={{display:"flex",gap:"2px"}}>
+                              {[th.bg,th.pa,th.bo].map((c,ci)=>(
+                                <div key={ci} style={{width:"8px",height:"8px",borderRadius:"50%",background:c,border:"1px solid "+th.bo}}/>
+                              ))}
+                            </div>
+                          </div>
+                          {lk&&<div style={{position:"absolute",top:"6px",right:"7px",background:"rgba(0,0,0,0.5)",borderRadius:"6px",padding:"1px 4px",fontSize:"9px",color:"#fff"}}>🔒 PRO</div>}
+                          {sel&&<div style={{position:"absolute",top:"6px",left:"7px",width:"8px",height:"8px",borderRadius:"50%",background:A.main,boxShadow:"0 0 8px "+A.glow}}/>}
                         </div>
                       );
                     })}
@@ -4597,7 +5050,7 @@ function App() {
                       const sel=acId===k;
                       return (
                         <div key={k}
-                          onClick={()=>{if(lk){toast(t("needPremium"));return;}setAcId(k);toast("🎨 "+v.label);}}
+                          onClick={()=>{if(lk){toast(t("needPremium"));return;}setAcId(k);try{localStorage.setItem("metik_acId",k);}catch(e){}toast("🎨 "+v.label);}}
                           style={{width:"34px",height:"34px",borderRadius:"50%",background:v.main,
                             border:sel?"3px solid "+T.tx:"3px solid transparent",
                             cursor:lk?"not-allowed":"pointer",opacity:lk?0.36:1,
@@ -4622,7 +5075,7 @@ function App() {
                       const sel=fontId===f.id;
                       return (
                         <div key={f.id}
-                          onClick={()=>{if(lk){toast(t("needPremium"));return;}setFontId(f.id);toast("✍️ "+f.label);}}
+                          onClick={()=>{if(lk){toast(t("needPremium"));return;}setFontId(f.id);try{localStorage.setItem("metik_fontId",f.id);}catch(e){}toast("✍️ "+f.label);}}
                           style={{position:"relative",borderRadius:"14px",border:sel?"2px solid "+A.main:"1.5px solid "+T.bo,
                             background:sel?"linear-gradient(135deg,"+A.main+"18,"+A.dark+"0a)":T.ca,
                             padding:"12px 14px",cursor:lk?"not-allowed":"pointer",opacity:lk?0.42:1,
@@ -4862,10 +5315,17 @@ function App() {
                   openUserProfile(activeChat);
                 }
               }}
-              style={{width:"46px",height:"46px",borderRadius:"50%",background:activeChat.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",fontWeight:900,color:"#fff",flexShrink:0,boxShadow:"0 3px 14px "+activeChat.color+"44",cursor:"pointer",transition:"transform 0.18s",position:"relative",overflow:"hidden"}}
+              style={{width:"46px",height:"46px",borderRadius:"50%",background:activeChat.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",fontWeight:900,color:"#fff",flexShrink:0,
+                boxShadow:(()=>{const fuH2=!activeChat.isAI&&!activeChat.isChannel?cloudUsers.find(u=>u.username===activeChat.username):null;const ab=fuH2?.avatarBorder||activeChat.avatarBorder;return ab?"0 0 0 3px "+ab+",0 3px 14px "+activeChat.color+"44":"0 3px 14px "+activeChat.color+"44";})(),
+                cursor:"pointer",transition:"transform 0.18s",position:"relative",overflow:"hidden"}}
               onMouseEnter={e=>e.currentTarget.style.transform="scale(1.09)"}
               onMouseLeave={e=>e.currentTarget.style.transform=""}>
-              {activeChat.avatarImg?<img src={activeChat.avatarImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span>{activeChat.avatar}</span>}
+              {(()=>{
+                const fu = !activeChat.isAI&&!activeChat.isChannel&&!activeChat.isGroup&&activeChat.username ? cloudUsers.find(u=>u.username===activeChat.username) : null;
+                const avImg = fu?.avatarImg || activeChat.avatarImg;
+                const avLet = fu?.avatar || activeChat.avatar;
+                return avImg ? <img src={avImg} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span>{avLet}</span>;
+              })()}
               {activeChat.isAI&&<div style={{position:"absolute",bottom:"-1px",right:"-1px",width:"18px",height:"18px",borderRadius:"50%",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",border:"2px solid "+T.pa,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"8px",fontWeight:900}}>✦</div>}
             </div>
             <div style={{flex:1,minWidth:0,cursor:"pointer"}} onClick={(e)=>{
@@ -4875,7 +5335,11 @@ function App() {
                 } else if(activeChat.isAI){ setViewProfile({username:"ai_assistant",displayName:"METIK AI",avatar:"✦",color:A.main,bio:"Йоу! Я METIK AI — умный, дерзкий, иногда кринжовый ассистент 😎 Шарю за всё. Обоюдно разберёмся!",avatarImg:null,joinDate:null,isAIProfile:true,profileGifts:[]});
                 } else { openUserProfile(activeChat); }
               }}>
-              <div style={{color:T.tx,fontWeight:700,fontSize:"15px",letterSpacing:"-0.2px"}}>{activeChat.name}</div>
+              {(()=>{
+                const fuH = !activeChat.isAI&&!activeChat.isChannel&&!activeChat.isGroup&&activeChat.username ? cloudUsers.find(u=>u.username===activeChat.username) : null;
+                const ncH = fuH?.nameColor || activeChat.nameColor || T.tx;
+                return <div style={{color:ncH,fontWeight:700,fontSize:"15px",letterSpacing:"-0.2px"}}>{activeChat.name}</div>;
+              })()}
               <div style={{fontSize:"11px",fontWeight:500,display:"flex",alignItems:"center",gap:"5px",marginTop:"2px"}}>
                 {activeChat.isChannel
                   ? <><span style={{color:A.main}}>{activeChat.isOwned?"✏️":"📢"}</span><span style={{color:A.main}}>{activeChat.isOwned?t("yourChannel"):t("channel")}</span></>
@@ -4897,7 +5361,7 @@ function App() {
             {/* Call buttons + three dots — only for DMs and AI, not channels */}
             {!activeChat.isChannel && (
               <div style={{display:"flex",alignItems:"center",gap:"2px"}}>
-                <button className="ib" onClick={()=>{ if(!activeChat.isAI && activeChat.username) startCall(activeChat); else toast("📞 Нельзя позвонить боту"); }}
+                <button className="ib" onClick={()=>toast("📞 Аудиозвонки временно недоступны")}
                   style={{width:"40px",height:"40px",color:T.su,flexShrink:0}}
                   onMouseEnter={e=>{e.currentTarget.style.background=T.caH;e.currentTarget.style.color=A.main;}}
                   onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=T.su;}}>
@@ -4981,18 +5445,29 @@ function App() {
                     </div>
                   : <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"12px",maxHeight:"340px",overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",paddingBottom:"4px"}}>
                       {gifts.filter(g=>!g.hidden).map(g=>(
-                        <div key={g.id} onClick={()=>{
-                          const sentGift = {id:"sg"+Date.now(), emoji:g.emoji, name:g.name, price:g.price, sentAt:Date.now(), from:user.username};
-                          // Добавляем сообщение И сохраняем подарок в самом чате
-                          setChats(c=>c.map(x=>String(x.id)===String(chatId)?{
-                            ...x,
-                            profileGifts:[...(x.profileGifts||[]),sentGift],
-                            messages:[...x.messages,{id:Date.now(),from:"me",text:"",fileType:"sticker",emoji:g.emoji,stickerLabel:g.name,time:new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}),isGift:true,giftName:g.name,giftEmoji:g.emoji}],
-                            lastMsg:"🎁 "+g.name,time:"сейчас"
-                          }:x));
+                        <div key={g.id} onClick={async()=>{
+                          const now = new Date();
+                          const timeStr = now.toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"});
+                          const msgId = Date.now();
+                          const sentGift = {id:"sg"+msgId, emoji:g.emoji, name:g.name, price:g.price, sentAt:msgId, from:user.username, fromName:user.displayName||user.username};
+                          // Сообщение о подарке
+                          const giftMsg = {id:msgId, from:"me", text:"🎁 "+g.name, fileType:"gift", giftEmoji:g.emoji, giftName:g.name, giftPrice:g.price, time:timeStr, senderName:null};
+                          // Обновляем чат
+                          const ac = chats.find(c=>String(c.id)===String(chatId));
+                          bumpChat(chatId, {
+                            profileGifts:[...(ac?.profileGifts||[]),sentGift],
+                            messages:[...(ac?.messages||[]),giftMsg].slice(-100),
+                            lastMsg:"🎁 "+g.name,
+                            time:timeStr
+                          });
+                          // Убираем подарок из своих
                           setGifts(p=>p.filter(x=>x.id!==g.id));
                           setGiftPickChat(false);
-                          toast("🎁 Подарок отправлен!");
+                          // Доставляем получателю через inbox
+                          if(ac && ac.username && !ac.isAI) {
+                            await deliverToRecipient(ac, giftMsg);
+                          }
+                          toast("🎁 "+g.name+" отправлен!");
                         }}
                           style={{background:T.ca,border:"1.5px solid "+T.caB,borderRadius:"16px",padding:"14px 8px",textAlign:"center",cursor:"pointer",transition:"all 0.2s"}}
                           onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.borderColor=A.main+"66";}}
@@ -5022,7 +5497,11 @@ function App() {
 
           {/* Messages */}
           <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"18px 14px",display:"flex",flexDirection:"column",gap:"8px",backgroundImage:T.id==="light"?"radial-gradient(rgba(0,0,0,0.08) 1px,transparent 1px)":"radial-gradient("+T.bo+"55 1px,transparent 1px)",backgroundSize:"28px 28px"}}>
-            {activeChat.messages.map((m,i)=>{
+            {(()=>{
+              // Дедупликация сообщений по ID
+              const seen=new Set(); 
+              return activeChat.messages.filter(m=>{ const k=String(m.id); if(seen.has(k)) return false; seen.add(k); return true; });
+            })().map((m,i)=>{
               const isChannel = activeChat.isChannel;
               const isGroup   = activeChat.isGroup;
               if (m.isSystem) return (
@@ -5036,10 +5515,13 @@ function App() {
               // В личке/ИИ: моё справа с градиентом, чужое слева без градиента
               const alignRight = !isChannel && m.from==="me";
               const side = alignRight ? "flex-end" : "flex-start";
-              const bubbleBg = alignRight
-                ? "linear-gradient(135deg,"+A.main+","+A.dark+")"
-                : activeChat.isAI ? "linear-gradient(135deg,"+A.main+"14,"+A.dark+"08)" : (T.id==="light"?"#FFFFFF":T.bu);
-              const bubbleBorder = alignRight ? "none"
+              const isRainbow = T.id==="rainbow";
+              const bubbleBg = isRainbow
+                ? "transparent"
+                : alignRight
+                  ? "linear-gradient(135deg,"+A.main+","+A.dark+")"
+                  : activeChat.isAI ? "linear-gradient(135deg,"+A.main+"14,"+A.dark+"08)" : (T.id==="light"?"#FFFFFF":T.bu);
+              const bubbleBorder = isRainbow ? "none" : alignRight ? "none"
                 : activeChat.isAI ? "1px solid "+A.main+"20" : T.id==="light" ? "1px solid rgba(0,0,0,0.13)" : "1px solid "+T.bo+"55";
               const bubbleRadius = alignRight ? "22px 22px 6px 22px" : "22px 22px 22px 6px";
               const textColor = alignRight ? "#fff" : T.buT;
@@ -5060,7 +5542,12 @@ function App() {
                       {m.replyTo.from==="me"?"Вы":"ИИ"}: {m.replyTo.text}...
                     </div>
                   )}
-                  <div data-msg-bubble="1" onContextMenu={e=>{e.preventDefault();e.stopPropagation();setMsgMenu({msg:m,x:e.clientX,y:e.clientY});}}
+                  <div data-msg-bubble="1"
+                    className={isRainbow && m.fileType!=="sticker" ? "rb-msg" : ""}
+                    onContextMenu={e=>{e.preventDefault();e.stopPropagation();setMsgMenu({msg:m,x:e.clientX,y:e.clientY});}}
+                    onTouchStart={e=>{const lp=setTimeout(()=>{const t=e.touches[0];setMsgMenu({msg:m,x:t.clientX,y:t.clientY});},500);e.currentTarget._lp=lp;}}
+                    onTouchEnd={e=>{clearTimeout(e.currentTarget._lp);}}
+                    onTouchMove={e=>{clearTimeout(e.currentTarget._lp);}}
                     style={{
                       background: m.fileType==="sticker" ? "transparent" : m.fileType==="gift" ? (alignRight ? "linear-gradient(135deg,"+A.main+","+A.dark+")" : T.ca) : bubbleBg,
                       borderRadius: bubbleRadius,
@@ -5106,14 +5593,65 @@ function App() {
             {msgMenu && (
               <div onClick={()=>setMsgMenu(null)} style={{position:"fixed",inset:0,zIndex:900}}/>
             )}
+
+            {/* ── КОНТЕКСТНОЕ МЕНЮ ЧАТА ── */}
+            {chatCtxMenu && (
+              <div onClick={()=>setChatCtxMenu(null)} style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(0,0,0,0.15)",WebkitBackdropFilter:"blur(2px)",backdropFilter:"blur(2px)"}}/>
+            )}
+            {chatCtxMenu && (()=>{
+              const {chat:ch, x, y} = chatCtxMenu;
+              const W=220, H=ch.isAI?100:160;
+              let cx=x, cy=y;
+              if(cx+W>window.innerWidth) cx=window.innerWidth-W-10;
+              if(cy+H>window.innerHeight) cy=window.innerHeight-H-10;
+              if(cx<10) cx=10; if(cy<10) cy=10;
+              return (
+                <div onClick={e=>e.stopPropagation()} style={{position:"fixed",left:cx+"px",top:cy+"px",background:T.pa,border:"1px solid "+T.bo+"66",borderRadius:"18px",zIndex:3001,minWidth:W+"px",boxShadow:"0 24px 60px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.06)",animation:"menuIn 0.2s cubic-bezier(.16,1,.3,1)",overflow:"hidden",WebkitBackdropFilter:"blur(48px)",backdropFilter:"blur(48px)"}}>
+                  <div style={{height:"2px",background:"linear-gradient(90deg,"+A.main+","+A.dark+",transparent)",opacity:0.7}}/>
+                  <div style={{padding:"10px 14px 8px",borderBottom:"1px solid "+T.bo+"33"}}>
+                    <div style={{color:T.tx,fontWeight:700,fontSize:"13px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ch.name}</div>
+                    <div style={{color:T.mu,fontSize:"10px",marginTop:"1px"}}>{ch.isChannel?"📢 Канал":ch.isGroup?"👥 Группа":ch.isAI?"🤖 ИИ":"💬 Личный чат"}</div>
+                  </div>
+                  {[
+                    {icon:"💬",label:"Открыть чат",color:A.main,fn:()=>{openChat(ch.id);setChatCtxMenu(null);}},
+                    ...(!ch.isAI?[
+                      {icon:"🗑️",label:"Удалить чат",color:"#F87171",del:true,fn:()=>{
+                        setChats(c=>c.filter(x=>String(x.id)!==String(ch.id)));
+                        if(String(chatId)===String(ch.id)) setChatId(null);
+                        setChatCtxMenu(null);
+                        toast("🗑️ Чат удалён");
+                      }},
+                    ]:[]),
+                  ].map((it,i,arr)=>(
+                    <button key={i} onClick={it.fn}
+                      style={{display:"flex",alignItems:"center",gap:"12px",width:"100%",padding:"11px 14px",background:"none",border:"none",cursor:"pointer",
+                        borderBottom:i<arr.length-1?"1px solid "+T.bo+"22":"none",
+                        color:it.color,fontSize:"13px",fontWeight:600,textAlign:"left",transition:"background 0.15s",fontFamily:"inherit"}}
+                      onMouseEnter={e=>e.currentTarget.style.background=it.del?"rgba(239,68,68,0.08)":A.main+"10"}
+                      onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                      <div style={{width:"32px",height:"32px",borderRadius:"10px",flexShrink:0,background:it.del?"rgba(239,68,68,0.12)":"linear-gradient(135deg,"+A.main+"22,"+A.dark+"10)",border:"1px solid "+(it.del?"rgba(239,68,68,0.2)":A.main+"22"),display:"flex",alignItems:"center",justifyContent:"center",fontSize:"15px"}}>{it.icon}</div>
+                      <span>{it.label}</span>
+                    </button>
+                  ))}
+                  <div style={{height:"4px"}}/>
+                </div>
+              );
+            })()}
             {msgMenu && (()=>{
               const mm = msgMenu;
+              const isMobile = window.innerWidth < 600;
               const vw = window.innerWidth; const vh = window.innerHeight;
-              const W=210; const H=260;
-              let cx = mm.x; let cy = mm.y;
-              if(cx+W>vw) cx=vw-W-10;
-              if(cy+H>vh) cy=vh-H-10;
-              if(cx<10) cx=10; if(cy<10) cy=10;
+              const W=220; const H=300;
+              let cx, cy;
+              if(isMobile){
+                cx = (vw - W) / 2;
+                cy = vh - H - 20;
+              } else {
+                cx = mm.x; cy = mm.y;
+                if(cx+W>vw) cx=vw-W-10;
+                if(cy+H>vh) cy=vh-H-10;
+                if(cx<10) cx=10; if(cy<10) cy=10;
+              }
               return (
               <div onClick={e=>e.stopPropagation()} style={{position:"fixed",left:cx+"px",top:cy+"px",background:T.pa,border:"1px solid "+T.bo+"66",borderRadius:"20px",zIndex:1000,minWidth:W+"px",boxShadow:"0 32px 80px rgba(0,0,0,0.75),0 8px 24px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06)",animation:"menuIn 0.22s cubic-bezier(.16,1,.3,1)",overflow:"hidden",WebkitBackdropFilter:"blur(48px)",backdropFilter:"blur(48px)",WebkitBackdropFilter:"blur(48px)"}}>
                 {/* Accent top line */}
@@ -5126,14 +5664,13 @@ function App() {
                   </div>
                 )}
                 {[
-                  {icon:"↩",label:"Ответить",color:A.main,accent:true,fn:()=>{setReplyTo(mm.msg);setMsgMenu(null);}},
-                  {icon:"⎘",label:"Копировать",color:T.tx,accent:false,fn:()=>{navigator.clipboard&&navigator.clipboard.writeText(mm.msg.text||"");toast("📋 Скопировано");setMsgMenu(null);}},
-                  {icon:"↗",label:"Переслать",color:T.tx,accent:false,fn:()=>{toast("↪️ Скоро!");setMsgMenu(null);}},
+                  {icon:"↩️",label:"Ответить",color:A.main,accent:true,fn:()=>{setReplyTo(mm.msg);setMsgMenu(null);}},
+                  ...(mm.msg.text?[{icon:"📋",label:"Копировать",color:T.tx,accent:false,fn:()=>{navigator.clipboard&&navigator.clipboard.writeText(mm.msg.text||"");toast("📋 Скопировано");setMsgMenu(null);}}]:[]),
                   ...(mm.msg.from==="me"?[
-                    {icon:"✕",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
-                    {icon:"✕",label:"Удалить у всех",color:"#EF4444",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено у всех");}},
+                    {icon:"🗑️",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
+                    {icon:"🗑️",label:"Удалить у всех",color:"#EF4444",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено у всех");}},
                   ]:[
-                    {icon:"✕",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
+                    {icon:"🗑️",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
                   ])
                 ].map((it,i,arr)=>(
                   <button key={i} onClick={it.fn}
