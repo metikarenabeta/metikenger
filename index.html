@@ -780,7 +780,7 @@ function PromoCode({ T, A, onTitleUnlocked, onGiftUnlocked }) {
 }
 
 /* ── GIFT DETAIL ── */
-function GiftDetail({ T, A, giftDetail, setGiftDetail, setGifts, setStraps, toast, lang }) {
+function GiftDetail({ T, A, giftDetail, setGiftDetail, setGifts, setStraps, toast, lang, user }) {
   const t = k => (I18N[lang]||I18N.ru)[k] || k;
   if (!giftDetail) return null;
   const g = giftDetail;
@@ -796,8 +796,16 @@ function GiftDetail({ T, A, giftDetail, setGiftDetail, setGifts, setStraps, toas
     toast(g.hidden ? t("shownNow") : t("hiddenNow"));
   }
   function burnGift() {
-    setGifts(p => p.filter(x => x.id!==g.id));
-    setStraps(s => s + burnReturn);
+    setGifts(p => {
+      const newGifts = p.filter(x => x.id!==g.id);
+      if(user?.username) fbSet("/accounts/"+user.username+"/gifts", newGifts);
+      return newGifts;
+    });
+    setStraps(s => {
+      const ns = s + burnReturn;
+      if(user?.username) fbSet("/accounts/"+user.username+"/straps", ns);
+      return ns;
+    });
     close();
     toast("🔥 Подарок сожжён · +"+burnReturn+" straps");
   }
@@ -2782,15 +2790,10 @@ function App() {
     if(!f && chatOrAcc.username) f = {username:chatOrAcc.username, displayName:chatOrAcc.name||chatOrAcc.username, avatar:chatOrAcc.avatar, color:chatOrAcc.color, avatarImg:chatOrAcc.avatarImg};
     if(!f) { toast(t("profileUnavailable")); return; }
 
-    const chatInList = chats.find(c => !c.isChannel && !c.isGroup && !c.isAI && c.username === f.username);
-    const chatProfileGifts = chatInList?.profileGifts || chatOrAcc.profileGifts || [];
     const ls = lastSeenCache[f.username] || 0;
 
     // Открываем СРАЗУ без ожидания Firebase
-    setViewProfile({
-      ...f,
-      profileGifts: [...(f.gifts||[]), ...chatProfileGifts.filter(g => !(f.gifts||[]).find(x=>x.id===g.id))]
-    });
+    setViewProfile({...f, profileGifts: f.gifts||[]});
 
     // В фоне обновляем данные из Firebase (не блокируем UI)
     if(chatOrAcc.username) {
@@ -2800,10 +2803,8 @@ function App() {
       ]).then(([freshAcc, freshLs])=>{
         if(freshLs) setLastSeenCache(prev=>({...prev,[chatOrAcc.username]:freshLs}));
         if(freshAcc) {
-          const chatPG = chatInList?.profileGifts || chatOrAcc.profileGifts || [];
           setViewProfile(prev=>prev?.username===chatOrAcc.username ? {
-            ...prev, ...freshAcc,
-            profileGifts: [...(freshAcc.gifts||[]), ...chatPG.filter(g => !(freshAcc.gifts||[]).find(x=>x.id===g.id))]
+            ...prev, ...freshAcc, profileGifts: freshAcc.gifts||[]
           } : prev);
         }
       });
@@ -3628,7 +3629,7 @@ function App() {
         </div>
       )}
       {gModal       && <GiftModal T={T} A={A} straps={straps} setStraps={setStraps} balloonCount={totalBoughtBalloon} appleCount={totalBoughtApple} setGifts={setGifts} setGModal={setGModal} setTotalBoughtBalloon={setTotalBoughtBalloon} setTotalBoughtApple={setTotalBoughtApple} toast={toast} lang={lang} initialType={gModal}/>}
-      {giftDetail   && <GiftDetail T={T} A={A} giftDetail={giftDetail} setGiftDetail={setGiftDetail} setGifts={setGifts} setStraps={setStraps} toast={toast} lang={lang}/>}
+      {giftDetail   && <GiftDetail T={T} A={A} giftDetail={giftDetail} setGiftDetail={setGiftDetail} setGifts={setGifts} setStraps={setStraps} toast={toast} lang={lang} user={user}/>}
       {viewProfile  && <UserProfileModal T={T} A={A} viewProfile={viewProfile} setViewProfile={setViewProfile} lang={lang} lastSeenCache={lastSeenCache}/>}
 
       {/* ── СКРЫТЫЙ АУДИО для удалённого потока ── */}
@@ -5455,7 +5456,6 @@ function App() {
                           // Обновляем чат
                           const ac = chats.find(c=>String(c.id)===String(chatId));
                           bumpChat(chatId, {
-                            profileGifts:[...(ac?.profileGifts||[]),sentGift],
                             messages:[...(ac?.messages||[]),giftMsg].slice(-100),
                             lastMsg:"🎁 "+g.name,
                             time:timeStr
