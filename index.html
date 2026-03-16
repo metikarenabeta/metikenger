@@ -52,7 +52,8 @@ self.addEventListener('notificationclick', e => {
 })();
 </script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
+input,textarea{user-select:text;-webkit-user-select:text;}
 html{height:100%;height:-webkit-fill-available;}
 body,#root{height:100%;height:calc(var(--vh,1vh)*100);width:100%;overflow:hidden;background:#07080D;overscroll-behavior:none;-webkit-text-size-adjust:100%;}
 body{font-family:'DM Sans',system-ui,sans-serif;background:#07080D;}
@@ -542,7 +543,7 @@ function GiftModal({ T, A, straps, setStraps, balloonCount, appleCount, setGifts
 
   function switchType(t) { setGiftType(t); setQty(1); setStep(0); }
 
-  function buyGifts() {
+  async function buyGifts() {
     if (!canAfford) return;
     const now = Date.now();
     const newGifts = Array.from({length: qty}, (_, i) => ({
@@ -552,8 +553,20 @@ function GiftModal({ T, A, straps, setStraps, balloonCount, appleCount, setGifts
     }));
     setStraps(s => s - totalCost);
     setGifts(g => [...g, ...newGifts]);
-    if(isBalloon) setTotalBoughtBalloon(n => n + qty);
-    else setTotalBoughtApple(n => n + qty);
+    // Читаем свежее значение из Firebase и атомарно увеличиваем
+    try {
+      const key = isBalloon ? "balloon" : "apple";
+      const fresh = await fbGet("/shop_stats/"+key);
+      const freshVal = (typeof fresh === "number" ? fresh : 0);
+      const newTotal = freshVal + qty;
+      await fbSet("/shop_stats/"+key, newTotal);
+      if(isBalloon) setTotalBoughtBalloon(newTotal);
+      else setTotalBoughtApple(newTotal);
+    } catch(e) {
+      // fallback
+      if(isBalloon) setTotalBoughtBalloon(n => n + qty);
+      else setTotalBoughtApple(n => n + qty);
+    }
     close();
     toast(t("giftBought").replace("{qty}",qty).replace("{left}",available-qty));
   }
@@ -714,9 +727,10 @@ const PROMO_CODES = {
   "NOHANDLE-4471": { once:true, gift:{emoji:"🌂",name:"Зонтик без ручки",price:67,type:"umbrella_no_handle"}, reward:"Подарок 🌂 Зонтик без ручки (67 st)" },
   "NOHANDLE-8829": { once:true, gift:{emoji:"🌂",name:"Зонтик без ручки",price:67,type:"umbrella_no_handle"}, reward:"Подарок 🌂 Зонтик без ручки (67 st)" },
   "NOHANDLE-3357": { once:true, gift:{emoji:"🌂",name:"Зонтик без ручки",price:67,type:"umbrella_no_handle"}, reward:"Подарок 🌂 Зонтик без ручки (67 st)" },
+  "MEGA-9911":     { once:true, straps:10000, reward:"💰 10 000 страпсов" },
 };
 
-function PromoCode({ T, A, onTitleUnlocked, onGiftUnlocked }) {
+function PromoCode({ T, A, onTitleUnlocked, onGiftUnlocked, onStrapsUnlocked }) {
   const [promoVal, setPromoVal] = React.useState("");
   const [promoState, setPromoState] = React.useState("idle");
   const [rewardMsg, setRewardMsg] = React.useState("");
@@ -744,6 +758,7 @@ function PromoCode({ T, A, onTitleUnlocked, onGiftUnlocked }) {
     setPromoState("ok");
     if(promo.title && onTitleUnlocked) onTitleUnlocked(promo.title);
     if(promo.gift && onGiftUnlocked) onGiftUnlocked({...promo.gift, id:"gift_"+Date.now(), acquiredAt:Date.now(), burnDeadline:Date.now()+7*24*60*60*1000});
+    if(promo.straps && onStrapsUnlocked) onStrapsUnlocked(promo.straps);
   }
 
   return (
@@ -1850,7 +1865,8 @@ async function fbGetChats(username) {
   if(arr.length > 0 && arr[0]._order !== undefined) {
     arr.sort((a,b)=>(a._order||0)-(b._order||0));
   }
-  return arr;
+  // Гарантируем что у каждого чата есть массив messages
+  return arr.map(c=>({...c, messages: Array.isArray(c.messages) ? c.messages : []}));
 }
 
 // Отправить сообщение получателю
@@ -1870,11 +1886,15 @@ async function fbDeliverMessage(toUsername, fromUsername, fromDisplayName, fromA
 function AdminPanel(props) {
   var T=props.T,A=props.A,chats=props.chats,setChats=props.setChats,toast=props.toast;
   var FIREBASE_URL=props.FIREBASE_URL;
+  const [tab, setTab] = React.useState("users");
   const [adminUsers, setAdminUsers] = React.useState([]);
   const [adminLoading, setAdminLoading] = React.useState(false);
   const [adminSearch, setAdminSearch] = React.useState("");
   const [adminStats, setAdminStats] = React.useState(null);
   const [banInput, setBanInput] = React.useState("");
+  const [channels, setChannels] = React.useState([]);
+  const [chLoading, setChLoading] = React.useState(false);
+  const [chSearch, setChSearch] = React.useState("");
 
   async function loadUsers() {
     setAdminLoading(true);
@@ -1883,17 +1903,35 @@ function AdminPanel(props) {
       const data = await r.json();
       if(data){
         const users = Object.values(data).filter(Boolean).map(u=>({
-          username:u.username||"",
-          displayName:u.displayName||"",
-          joinDate:u.joinDate||null,
-          prem:u.prem||false,
-          straps:u.straps||0
+          username:u.username||"", displayName:u.displayName||"",
+          joinDate:u.joinDate||null, prem:u.prem||false, straps:u.straps||0
         }));
         setAdminUsers(users);
         setAdminStats({total:users.length, premium:users.filter(u=>u.prem).length});
       }
     } catch(e){ alert("Ошибка: "+e.message); }
     setAdminLoading(false);
+  }
+
+  async function loadChannels() {
+    setChLoading(true);
+    try {
+      const r = await fetch(FIREBASE_URL+"/channels.json",{cache:"no-store"});
+      const data = await r.json();
+      if(data){
+        setChannels(Object.values(data).filter(Boolean));
+      } else { setChannels([]); }
+    } catch(e){ alert("Ошибка: "+e.message); }
+    setChLoading(false);
+  }
+
+  async function deleteChannel(channelId) {
+    if(!confirm("Удалить канал @"+channelId+"?")) return;
+    await fetch(FIREBASE_URL+"/channels/"+channelId+".json",{method:"DELETE"});
+    await fetch(FIREBASE_URL+"/channel_msgs/"+channelId+".json",{method:"DELETE"});
+    setChannels(prev=>prev.filter(c=>c.channelId!==channelId));
+    setChats(c=>c.filter(ch=>ch.channelId!==channelId));
+    toast("✅ Канал @"+channelId+" удалён");
   }
 
   async function banUser(u) {
@@ -1925,64 +1963,118 @@ function AdminPanel(props) {
     u.username.includes(adminSearch.toLowerCase())||
     (u.displayName||"").toLowerCase().includes(adminSearch.toLowerCase())
   );
+  const filteredCh = channels.filter(c=>
+    (c.channelId||"").toLowerCase().includes(chSearch.toLowerCase())||
+    (c.name||"").toLowerCase().includes(chSearch.toLowerCase())
+  );
+
+  const tabBtn = (id, label) => React.createElement("button", {
+    onClick:()=>setTab(id),
+    style:{flex:1,padding:"10px",borderRadius:"12px",border:"none",cursor:"pointer",fontWeight:700,fontSize:"13px",
+      background:tab===id?"linear-gradient(135deg,"+A.main+","+A.dark+")":T.ca,
+      color:tab===id?"#fff":T.mu, transition:"all 0.2s"}
+  }, label);
 
   return React.createElement("div", {style:{width:"100%",padding:"16px",maxWidth:"560px",margin:"0 auto"}},
+    // Header
     React.createElement("div", {style:{background:"linear-gradient(135deg,rgba(239,68,68,0.15),rgba(220,38,38,0.08))",border:"1.5px solid rgba(239,68,68,0.3)",borderRadius:"24px",padding:"20px",marginBottom:"16px"}},
       React.createElement("div", {style:{color:T.tx,fontWeight:900,fontSize:"22px",fontFamily:"'Syne',sans-serif"}}, "🛡️ Админ-панель"),
       React.createElement("div", {style:{color:T.mu,fontSize:"12px",marginTop:"4px"}}, "Только для @metik")
     ),
-    adminStats && React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"16px"}},
-      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"16px",textAlign:"center"}},
-        React.createElement("div", {style:{fontSize:"26px"}}, "👥"),
-        React.createElement("div", {style:{color:"#6366F1",fontWeight:900,fontSize:"26px"}}, adminStats.total),
-        React.createElement("div", {style:{color:T.mu,fontSize:"11px"}}, "Всего юзеров")
+    // Stats
+    adminStats && React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"16px"}},
+      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"14px",textAlign:"center"}},
+        React.createElement("div", {style:{fontSize:"22px"}}, "👥"),
+        React.createElement("div", {style:{color:"#6366F1",fontWeight:900,fontSize:"22px"}}, adminStats.total),
+        React.createElement("div", {style:{color:T.mu,fontSize:"10px"}}, "Юзеров")
       ),
-      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"16px",textAlign:"center"}},
-        React.createElement("div", {style:{fontSize:"26px"}}, "⭐"),
-        React.createElement("div", {style:{color:"#F59E0B",fontWeight:900,fontSize:"26px"}}, adminStats.premium),
-        React.createElement("div", {style:{color:T.mu,fontSize:"11px"}}, "PRO")
+      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"14px",textAlign:"center"}},
+        React.createElement("div", {style:{fontSize:"22px"}}, "⭐"),
+        React.createElement("div", {style:{color:"#F59E0B",fontWeight:900,fontSize:"22px"}}, adminStats.premium),
+        React.createElement("div", {style:{color:T.mu,fontSize:"10px"}}, "PRO")
+      ),
+      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"14px",textAlign:"center"}},
+        React.createElement("div", {style:{fontSize:"22px"}}, "📢"),
+        React.createElement("div", {style:{color:"#06B6D4",fontWeight:900,fontSize:"22px"}}, channels.length),
+        React.createElement("div", {style:{color:T.mu,fontSize:"10px"}}, "Каналов")
       )
     ),
-    React.createElement("button", {onClick:loadUsers, disabled:adminLoading,
-      style:{width:"100%",padding:"13px",borderRadius:"16px",border:"none",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",color:"#fff",fontSize:"14px",fontWeight:700,cursor:"pointer",marginBottom:"14px",boxShadow:"0 6px 20px "+A.glow+"44"}},
-      adminLoading?"⏳ Загрузка...":"📋 Загрузить пользователей"
+    // Tabs
+    React.createElement("div", {style:{display:"flex",gap:"8px",marginBottom:"14px",background:T.ca,padding:"5px",borderRadius:"16px",border:"1px solid "+T.bo}},
+      tabBtn("users","👥 Пользователи"),
+      tabBtn("channels","📢 Каналы")
     ),
-    adminUsers.length > 0 && React.createElement("div", {style:{marginBottom:"14px"}},
-      React.createElement("input", {value:adminSearch, onChange:e=>setAdminSearch(e.target.value), placeholder:"🔍 Поиск...",
-        style:{width:"100%",padding:"11px 14px",borderRadius:"12px",border:"1px solid "+T.bo,background:T.pa,color:T.tx,fontSize:"13px",outline:"none",marginBottom:"10px",boxSizing:"border-box"}}),
-      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",overflow:"hidden",maxHeight:"300px",overflowY:"auto"}},
-        filtered.map(function(u,i){
-          return React.createElement("div", {key:u.username, style:{display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderBottom:i<filtered.length-1?"1px solid "+T.bo+"33":"none"}},
-            React.createElement("div", {style:{width:"36px",height:"36px",borderRadius:"11px",background:A.main+"18",border:"1px solid "+A.main+"28",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:"15px",color:A.main,flexShrink:0}},
-              (u.displayName||u.username||"?")[0].toUpperCase()
-            ),
-            React.createElement("div", {style:{flex:1,minWidth:0}},
-              React.createElement("div", {style:{color:T.tx,fontWeight:700,fontSize:"13px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, (u.displayName||u.username)+(u.prem?" ✦PRO":"")),
-              React.createElement("div", {style:{color:T.mu,fontSize:"10px"}}, "@"+u.username+" · "+u.straps+" st"+(u.joinDate?" · "+new Date(u.joinDate).toLocaleDateString("ru"):""))
-            ),
-            React.createElement("div", {style:{display:"flex",gap:"5px",flexShrink:0}},
-              React.createElement("button", {onClick:function(){resetPwd(u.username);}, title:"Сбросить пароль",
-                style:{width:"30px",height:"30px",borderRadius:"9px",border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.1)",color:"#F59E0B",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}, "🔑"),
-              React.createElement("button", {onClick:function(){banUser(u.username);}, title:"Удалить",
-                style:{width:"30px",height:"30px",borderRadius:"9px",border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.1)",color:"#F87171",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}, "🗑️")
-            )
-          );
-        })
-      )
-    ),
-    React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"16px"}},
-      React.createElement("div", {style:{color:T.tx,fontWeight:700,fontSize:"13px",marginBottom:"10px"}}, "⚡ Быстрые действия"),
-      React.createElement("input", {value:banInput, onChange:e=>setBanInput(e.target.value), placeholder:"@юзернейм",
-        style:{width:"100%",padding:"10px 13px",borderRadius:"12px",border:"1px solid "+T.bo,background:T.bg,color:T.tx,fontSize:"13px",outline:"none",marginBottom:"8px",boxSizing:"border-box"}}),
-      React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
-        React.createElement("button", {onClick:function(){banUser(banInput);},
-          style:{padding:"10px",borderRadius:"12px",border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.1)",color:"#F87171",fontSize:"12px",fontWeight:700,cursor:"pointer"}},
-          "🗑️ Удалить"
-        ),
-        React.createElement("button", {onClick:function(){resetPwd(banInput);},
-          style:{padding:"10px",borderRadius:"12px",border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.1)",color:"#F59E0B",fontSize:"12px",fontWeight:700,cursor:"pointer"}},
-          "🔑 Сброс пароля"
+
+    // USERS TAB
+    tab==="users" && React.createElement(React.Fragment, null,
+      React.createElement("button", {onClick:loadUsers, disabled:adminLoading,
+        style:{width:"100%",padding:"13px",borderRadius:"16px",border:"none",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",color:"#fff",fontSize:"14px",fontWeight:700,cursor:"pointer",marginBottom:"14px",boxShadow:"0 6px 20px "+A.glow+"44"}},
+        adminLoading?"⏳ Загрузка...":"📋 Загрузить пользователей"
+      ),
+      adminUsers.length > 0 && React.createElement("div", {style:{marginBottom:"14px"}},
+        React.createElement("input", {value:adminSearch, onChange:e=>setAdminSearch(e.target.value), placeholder:"🔍 Поиск...",
+          style:{width:"100%",padding:"11px 14px",borderRadius:"12px",border:"1px solid "+T.bo,background:T.pa,color:T.tx,fontSize:"13px",outline:"none",marginBottom:"10px",boxSizing:"border-box"}}),
+        React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",overflow:"hidden",maxHeight:"300px",overflowY:"auto"}},
+          filtered.map(function(u,i){
+            return React.createElement("div", {key:u.username, style:{display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderBottom:i<filtered.length-1?"1px solid "+T.bo+"33":"none"}},
+              React.createElement("div", {style:{width:"36px",height:"36px",borderRadius:"11px",background:A.main+"18",border:"1px solid "+A.main+"28",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:"15px",color:A.main,flexShrink:0}},
+                (u.displayName||u.username||"?")[0].toUpperCase()
+              ),
+              React.createElement("div", {style:{flex:1,minWidth:0}},
+                React.createElement("div", {style:{color:T.tx,fontWeight:700,fontSize:"13px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, (u.displayName||u.username)+(u.prem?" ✦PRO":"")),
+                React.createElement("div", {style:{color:T.mu,fontSize:"10px"}}, "@"+u.username+" · "+u.straps+" st"+(u.joinDate?" · "+new Date(u.joinDate).toLocaleDateString("ru"):""))
+              ),
+              React.createElement("div", {style:{display:"flex",gap:"5px",flexShrink:0}},
+                React.createElement("button", {onClick:function(){resetPwd(u.username);}, title:"Сбросить пароль",
+                  style:{width:"30px",height:"30px",borderRadius:"9px",border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.1)",color:"#F59E0B",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}, "🔑"),
+                React.createElement("button", {onClick:function(){banUser(u.username);}, title:"Удалить",
+                  style:{width:"30px",height:"30px",borderRadius:"9px",border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.1)",color:"#F87171",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}, "🗑️")
+              )
+            );
+          })
         )
+      ),
+      React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"16px"}},
+        React.createElement("div", {style:{color:T.tx,fontWeight:700,fontSize:"13px",marginBottom:"10px"}}, "⚡ Быстрые действия"),
+        React.createElement("input", {value:banInput, onChange:e=>setBanInput(e.target.value), placeholder:"@юзернейм",
+          style:{width:"100%",padding:"10px 13px",borderRadius:"12px",border:"1px solid "+T.bo,background:T.bg,color:T.tx,fontSize:"13px",outline:"none",marginBottom:"8px",boxSizing:"border-box"}}),
+        React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
+          React.createElement("button", {onClick:function(){banUser(banInput);},
+            style:{padding:"10px",borderRadius:"12px",border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.1)",color:"#F87171",fontSize:"12px",fontWeight:700,cursor:"pointer"}}, "🗑️ Удалить"),
+          React.createElement("button", {onClick:function(){resetPwd(banInput);},
+            style:{padding:"10px",borderRadius:"12px",border:"1px solid rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.1)",color:"#F59E0B",fontSize:"12px",fontWeight:700,cursor:"pointer"}}, "🔑 Сброс пароля")
+        )
+      )
+    ),
+
+    // CHANNELS TAB
+    tab==="channels" && React.createElement(React.Fragment, null,
+      React.createElement("button", {onClick:loadChannels, disabled:chLoading,
+        style:{width:"100%",padding:"13px",borderRadius:"16px",border:"none",background:"linear-gradient(135deg,#06B6D4,#0891B2)",color:"#fff",fontSize:"14px",fontWeight:700,cursor:"pointer",marginBottom:"14px",boxShadow:"0 6px 20px rgba(6,182,212,0.4)"}},
+        chLoading?"⏳ Загрузка...":"📢 Загрузить каналы"
+      ),
+      channels.length > 0 && React.createElement("div", null,
+        React.createElement("input", {value:chSearch, onChange:e=>setChSearch(e.target.value), placeholder:"🔍 Поиск...",
+          style:{width:"100%",padding:"11px 14px",borderRadius:"12px",border:"1px solid "+T.bo,background:T.pa,color:T.tx,fontSize:"13px",outline:"none",marginBottom:"10px",boxSizing:"border-box"}}),
+        React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",overflow:"hidden",maxHeight:"400px",overflowY:"auto"}},
+          filteredCh.map(function(ch,i){
+            return React.createElement("div", {key:ch.channelId||i, style:{display:"flex",alignItems:"center",gap:"12px",padding:"12px 14px",borderBottom:i<filteredCh.length-1?"1px solid "+T.bo+"33":"none"}},
+              React.createElement("div", {style:{width:"40px",height:"40px",borderRadius:"13px",background:ch.color||"#06B6D4",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",flexShrink:0,overflow:"hidden"}},
+                ch.avatarImg ? React.createElement("img",{src:ch.avatarImg,style:{width:"100%",height:"100%",objectFit:"cover"}}) : React.createElement("span",null,ch.avatar||"📢")
+              ),
+              React.createElement("div", {style:{flex:1,minWidth:0}},
+                React.createElement("div", {style:{color:T.tx,fontWeight:700,fontSize:"13px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, ch.name||"Без названия"),
+                React.createElement("div", {style:{color:T.mu,fontSize:"10px"}}, "@"+(ch.channelId||"?")+(ch.desc?" · "+ch.desc.slice(0,30):""))
+              ),
+              React.createElement("button", {onClick:function(){deleteChannel(ch.channelId);},
+                style:{width:"32px",height:"32px",borderRadius:"10px",border:"1px solid rgba(239,68,68,0.3)",background:"rgba(239,68,68,0.1)",color:"#F87171",fontSize:"15px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}, "🗑️")
+            );
+          })
+        )
+      ),
+      channels.length===0 && !chLoading && React.createElement("div", {style:{background:T.pa,border:"1px solid "+T.bo,borderRadius:"18px",padding:"32px",textAlign:"center"}},
+        React.createElement("div", {style:{fontSize:"36px",marginBottom:"10px"}}, "📢"),
+        React.createElement("div", {style:{color:T.mu,fontSize:"13px"}}, "Нажми кнопку выше чтобы загрузить каналы")
       )
     )
   );
@@ -2095,6 +2187,19 @@ function App() {
   const [gModal,    setGModal]    = useState(false);
   const [totalBoughtBalloon, setTotalBoughtBalloon] = useState(0);
   const [totalBoughtApple,   setTotalBoughtApple]   = useState(0);
+
+  // Загружаем глобальные счётчики магазина из Firebase
+  React.useEffect(()=>{
+    function loadStats(){
+      fbGet("/shop_stats").then(stats=>{
+        if(stats?.balloon !== undefined) setTotalBoughtBalloon(stats.balloon);
+        if(stats?.apple   !== undefined) setTotalBoughtApple(stats.apple);
+      }).catch(()=>{});
+    }
+    loadStats();
+    const iv = setInterval(loadStats, 30000);
+    return ()=>clearInterval(iv);
+  },[user?.username]);
   const [giftDetail,setGiftDetail]= useState(null);
   const [rouletteSpinning, setRouletteSpinning] = useState(false);
   const [rouletteResult,   setRouletteResult]   = useState(null);
@@ -2494,7 +2599,7 @@ function App() {
             );
             if(existingIdx >= 0) {
               const c = next[existingIdx];
-              if(c.messages.find(m => String(m.id) === String(incomingMsg.id))) continue;
+              if((c.messages||[]).find(m => String(m.id) === String(incomingMsg.id))) continue;
               const label = incomingMsg.fileType==="sticker"?"Стикер "+incomingMsg.text : incomingMsg.fileType==="voice"?"🎙️ Голосовое" : incomingMsg.text||"📎";
               const updated = {...c, lastMsg:label, time:incomingMsg.time||new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}), unread:(c.unread||0)+1, messages:[...c.messages, incomingMsg].slice(-100)};
               // Поднимаем чат наверх
@@ -2505,7 +2610,7 @@ function App() {
               if(existByUser>=0) {
                 // Чат есть — добавляем сообщение туда
                 const c = next[existByUser];
-                if(c.messages.find(m=>String(m.id)===String(incomingMsg.id))) continue;
+                if((c.messages||[]).find(m=>String(m.id)===String(incomingMsg.id))) continue;
                 const label = incomingMsg.fileType==="sticker"?"Стикер "+incomingMsg.text : incomingMsg.fileType==="voice"?"🎙️ Голосовое" : incomingMsg.fileType==="gift"?"🎁 "+incomingMsg.giftName : incomingMsg.text||"📎";
                 const updated = {...c, lastMsg:label, time:incomingMsg.time||new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"}), unread:(c.unread||0)+1, messages:[...c.messages,incomingMsg].slice(-100)};
                 next = [updated, ...next.filter((_,i)=>i!==existByUser)];
@@ -3065,7 +3170,7 @@ function App() {
       replyTo: replyTo ? {id:replyTo.id,text:replyTo.text.slice(0,60),from:replyTo.from} : null,
       senderName: (ac.isChannel||ac.isGroup) ? (user.displayName||user.username) : null,
     };
-    const prevMsgs=[...ac.messages];
+    const prevMsgs=[...(ac.messages||[])];
     bumpChat(chatId,{lastMsg:nm.text,time:nm.time,messages:[...(chats.find(c=>String(c.id)===String(chatId))?.messages||[]),nm].slice(-100)});
     const sentText=msg.trim(); setMsg(""); setReplyTo(null);
     playMsg();
@@ -3193,7 +3298,7 @@ function App() {
               ...x,
               lastMsg:"🎨 Картинка готова!",
               messages:[
-                ...x.messages.filter(m=>m.id!==thinkingId),
+                ...(x.messages||[]).filter(m=>m.id!==thinkingId),
                 {id:Date.now()+2,from:"them",fileType:"image",fileData:imgUrl,fileOrigUrl:_rawUrl,fileName:prompt,text:"",time:doneTime}
               ].slice(-100)
             };
@@ -4597,7 +4702,7 @@ function App() {
             </div>
 
             {/* ── PROMO CODE ── */}
-            <PromoCode T={T} A={A} onTitleUnlocked={unlockTitle} onGiftUnlocked={g=>{setGifts(prev=>[...prev,g]);toast("🎁 Получен подарок: "+g.name+"!");fbSaveAccount({...user,straps,gifts:[...gifts,g],unlockedTitles,activeTitle,prem});}}/>
+            <PromoCode T={T} A={A} onTitleUnlocked={unlockTitle} onGiftUnlocked={g=>{setGifts(prev=>[...prev,g]);toast("🎁 Получен подарок: "+g.name+"!");fbSaveAccount({...user,straps,gifts:[...gifts,g],unlockedTitles,activeTitle,prem});}} onStrapsUnlocked={n=>{setStraps(s=>{const ns=s+n;fbSaveAccount({...user,straps:ns,gifts,unlockedTitles,activeTitle,prem});return ns;});toast("💰 +"+n.toLocaleString()+" страпсов!");}} />
 
             {/* ── РУЛЕТКА ── */}
             {(()=>{
@@ -5500,7 +5605,7 @@ function App() {
             {(()=>{
               // Дедупликация сообщений по ID
               const seen=new Set(); 
-              return activeChat.messages.filter(m=>{ const k=String(m.id); if(seen.has(k)) return false; seen.add(k); return true; });
+              return (activeChat.messages||[]).filter(m=>{ const k=String(m.id); if(seen.has(k)) return false; seen.add(k); return true; });
             })().map((m,i)=>{
               const isChannel = activeChat.isChannel;
               const isGroup   = activeChat.isGroup;
@@ -5545,6 +5650,9 @@ function App() {
                   <div data-msg-bubble="1"
                     className={isRainbow && m.fileType!=="sticker" ? "rb-msg" : ""}
                     onContextMenu={e=>{e.preventDefault();e.stopPropagation();setMsgMenu({msg:m,x:e.clientX,y:e.clientY});}}
+                    onTouchStart={e=>{const lp=setTimeout(()=>{const t=e.touches[0];setMsgMenu({msg:m,x:t.clientX,y:t.clientY});},500);e.currentTarget._lp=lp;}}
+                    onTouchEnd={e=>{clearTimeout(e.currentTarget._lp);}}
+                    onTouchMove={e=>{clearTimeout(e.currentTarget._lp);}}
                     onTouchStart={e=>{const lp=setTimeout(()=>{const t=e.touches[0];setMsgMenu({msg:m,x:t.clientX,y:t.clientY});},500);e.currentTarget._lp=lp;}}
                     onTouchEnd={e=>{clearTimeout(e.currentTarget._lp);}}
                     onTouchMove={e=>{clearTimeout(e.currentTarget._lp);}}
@@ -5667,10 +5775,10 @@ function App() {
                   {icon:"↩️",label:"Ответить",color:A.main,accent:true,fn:()=>{setReplyTo(mm.msg);setMsgMenu(null);}},
                   ...(mm.msg.text?[{icon:"📋",label:"Копировать",color:T.tx,accent:false,fn:()=>{navigator.clipboard&&navigator.clipboard.writeText(mm.msg.text||"");toast("📋 Скопировано");setMsgMenu(null);}}]:[]),
                   ...(mm.msg.from==="me"?[
-                    {icon:"🗑️",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
-                    {icon:"🗑️",label:"Удалить у всех",color:"#EF4444",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено у всех");}},
+                    {icon:"🗑️",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:(x.messages||[]).filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
+                    {icon:"🗑️",label:"Удалить у всех",color:"#EF4444",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:(x.messages||[]).filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено у всех");}},
                   ]:[
-                    {icon:"🗑️",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:x.messages.filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
+                    {icon:"🗑️",label:"Удалить у себя",color:"#F87171",accent:false,del:true,fn:()=>{setChats(c=>c.map(x=>String(x.id)===String(chatId)?{...x,messages:(x.messages||[]).filter(mx=>mx.id!==mm.msg.id)}:x));setMsgMenu(null);toast("🗑️ Удалено");}},
                   ])
                 ].map((it,i,arr)=>(
                   <button key={i} onClick={it.fn}
