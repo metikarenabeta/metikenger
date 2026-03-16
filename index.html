@@ -55,7 +55,7 @@ self.addEventListener('notificationclick', e => {
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
 input,textarea{user-select:text;-webkit-user-select:text;}
 html{height:100%;height:-webkit-fill-available;}
-body,#root{height:100%;height:calc(var(--vh,1vh)*100);width:100%;overflow:hidden;background:#07080D;overscroll-behavior:none;-webkit-text-size-adjust:100%;}
+body,#root{height:100%;height:100dvh;height:calc(var(--vh,1vh)*100);width:100%;overflow:hidden;background:#07080D;overscroll-behavior:none;-webkit-text-size-adjust:100%;}
 body{font-family:'DM Sans',system-ui,sans-serif;background:#07080D;}
 input,textarea{font-size:16px!important;}
 ::-webkit-scrollbar{width:3px;}
@@ -150,10 +150,14 @@ document.addEventListener("contextmenu", function(e) {
 });
 (function(){
   // iOS Safari viewport height fix
-  function setVH(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px'); }
+  function setVH(){
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', vh+'px');
+    document.documentElement.style.setProperty('height', window.innerHeight+'px');
+  }
   setVH();
   window.addEventListener('resize', setVH);
-  window.addEventListener('orientationchange', function(){ setTimeout(setVH,200); });
+  window.addEventListener('orientationchange', function(){ setTimeout(setVH,50); setTimeout(setVH,300); setTimeout(setVH,600); });
 
   // iOS Safari AudioContext fix — must resume after user gesture
   document.addEventListener('touchstart', function resumeAudio(){
@@ -521,7 +525,7 @@ function useToast() {
 }
 
 /* ── GIFT MODAL ── */
-function GiftModal({ T, A, straps, setStraps, balloonCount, appleCount, setGifts, setGModal, setTotalBoughtBalloon, setTotalBoughtApple, toast, lang, initialType }) {
+function GiftModal({ T, A, straps, setStraps, balloonCount, appleCount, setGifts, setGModal, setTotalBoughtBalloon, setTotalBoughtApple, toast, lang, initialType, user, gifts, unlockedTitles, activeTitle, prem }) {
   const t = k => (I18N[lang]||I18N.ru)[k] || k;
   const [step,     setStep]     = React.useState(0);
   const [qty,      setQty]      = React.useState(1);
@@ -552,7 +556,15 @@ function GiftModal({ T, A, straps, setStraps, balloonCount, appleCount, setGifts
       burnDeadline: now + 7*24*60*60*1000
     }));
     setStraps(s => s - totalCost);
-    setGifts(g => [...g, ...newGifts]);
+    setGifts(g => {
+      const updated = [...g, ...newGifts];
+      // Сразу сохраняем в Firebase без дебаунса
+      if(user?.username) {
+        fbSaveAccount({...user, straps: straps - totalCost, gifts: updated,
+          unlockedTitles: unlockedTitles||[], activeTitle: activeTitle||"", prem: prem||false});
+      }
+      return updated;
+    });
     // Читаем свежее значение из Firebase и атомарно увеличиваем
     try {
       const key = isBalloon ? "balloon" : "apple";
@@ -2647,7 +2659,7 @@ function App() {
         try { localStorage.setItem("metik_accounts", JSON.stringify(updated)); } catch(e){}
         return updated;
       });
-    }, 2000);
+    }, 500);
   }, [gifts, straps, prem, unlockedTitles, activeTitle]);
 
   // Авто-сохранение чатов отдельно с большим дебаунсом
@@ -3733,7 +3745,7 @@ function App() {
           </div>
         </div>
       )}
-      {gModal       && <GiftModal T={T} A={A} straps={straps} setStraps={setStraps} balloonCount={totalBoughtBalloon} appleCount={totalBoughtApple} setGifts={setGifts} setGModal={setGModal} setTotalBoughtBalloon={setTotalBoughtBalloon} setTotalBoughtApple={setTotalBoughtApple} toast={toast} lang={lang} initialType={gModal}/>}
+      {gModal       && <GiftModal T={T} A={A} straps={straps} setStraps={setStraps} balloonCount={totalBoughtBalloon} appleCount={totalBoughtApple} setGifts={setGifts} setGModal={setGModal} setTotalBoughtBalloon={setTotalBoughtBalloon} setTotalBoughtApple={setTotalBoughtApple} toast={toast} lang={lang} initialType={gModal} user={user} gifts={gifts} unlockedTitles={unlockedTitles} activeTitle={activeTitle} prem={prem}/>}
       {giftDetail   && <GiftDetail T={T} A={A} giftDetail={giftDetail} setGiftDetail={setGiftDetail} setGifts={setGifts} setStraps={setStraps} toast={toast} lang={lang} user={user}/>}
       {viewProfile  && <UserProfileModal T={T} A={A} viewProfile={viewProfile} setViewProfile={setViewProfile} lang={lang} lastSeenCache={lastSeenCache}/>}
 
@@ -5066,249 +5078,240 @@ function App() {
               FIREBASE_URL={FIREBASE_URL} fbGet={fbGet} fbSet={fbSet} genSalt={genSalt} pbkdf2Hash={pbkdf2Hash}/>
           )}
           {/* ── SETTINGS ── */}
-          {tab==="settings" && <div style={{width:"100%"}}><div style={{padding:"16px",maxWidth:"560px",width:"100%",margin:"0 auto"}}>
-            {sPage==="main" && <>
+          {tab==="settings" && <div style={{width:"100%",flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
 
-              {/* Settings hero header */}
-              <div style={{
-                background:"linear-gradient(135deg,"+A.main+"18,"+A.dark+"0a)",
-                border:"1px solid "+A.main+"28",borderRadius:"24px",
-                padding:"20px 20px",marginBottom:"16px",
-                position:"relative",overflow:"hidden",
-                animation:"fadeIn 0.3s cubic-bezier(.16,1,.3,1)"
-              }}>
-                <div style={{position:"absolute",top:"-30px",right:"-30px",width:"120px",height:"120px",borderRadius:"50%",background:A.glow,filter:"blur(50px)",opacity:0.3,pointerEvents:"none"}}/>
-                <div style={{display:"flex",alignItems:"center",gap:"14px",position:"relative"}}>
-                  <div style={{width:"52px",height:"52px",borderRadius:"18px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"24px",boxShadow:"0 8px 24px "+A.glow+"66",flexShrink:0}}>⚙️</div>
-                  <div>
-                    <div style={{color:T.tx,fontWeight:800,fontSize:"18px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.3px"}}>Настройки</div>
-                    <div style={{color:T.mu,fontSize:"12px",fontWeight:500,marginTop:"2px"}}>Управление аккаунтом и интерфейсом</div>
-                  </div>
+            {/* ── HERO ── */}
+            <div style={{position:"relative",overflow:"hidden",padding:"max(52px,env(safe-area-inset-top)) 20px 24px",background:"linear-gradient(160deg,"+A.main+"20,"+A.dark+"08 60%,"+T.bg+" 100%)"}}>
+              <div style={{position:"absolute",top:"-50px",right:"-40px",width:"220px",height:"220px",borderRadius:"50%",background:A.glow,filter:"blur(80px)",opacity:0.3,pointerEvents:"none"}}/>
+              <div style={{position:"absolute",bottom:"-30px",left:"-20px",width:"150px",height:"150px",borderRadius:"50%",background:A.dark,filter:"blur(60px)",opacity:0.2,pointerEvents:"none"}}/>
+              <div style={{position:"relative",display:"flex",alignItems:"center",gap:"16px"}}>
+                <div style={{width:"56px",height:"56px",borderRadius:"20px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",boxShadow:"0 8px 28px "+A.glow+"66",flexShrink:0,animation:"iconPop 0.5s cubic-bezier(.16,1,.3,1) both"}}>⚙️</div>
+                <div>
+                  <div style={{color:T.tx,fontWeight:900,fontSize:"22px",fontFamily:"'Syne',sans-serif",letterSpacing:"-0.5px",lineHeight:1}}>Настройки</div>
+                  <div style={{color:T.mu,fontSize:"12px",fontWeight:500,marginTop:"4px"}}>Аккаунт и интерфейс</div>
                 </div>
               </div>
+            </div>
 
-              {/* Settings group: Appearance */}
-              <div style={{marginBottom:"10px"}}>
-                <div style={{color:T.mu,fontSize:"10px",fontWeight:800,letterSpacing:"2px",textTransform:"uppercase",paddingLeft:"4px",marginBottom:"8px"}}>ВНЕШНИЙ ВИД</div>
-                <div style={{background:T.pa,borderRadius:"20px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 16px rgba(0,0,0,0.08)",padding:"16px 16px 20px"}}>
+            <div style={{padding:"0 14px 40px",maxWidth:"560px",margin:"0 auto",width:"100%"}}>
 
-                  {/* Theme */}
-                  <div style={{color:T.mu,fontSize:"10px",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",marginBottom:"10px"}}>{t("theme")}</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px",marginBottom:"20px"}}>
+            {sPage==="main" && <>
+              {/* ── ВНЕШНИЙ ВИД ── */}
+              <div style={{marginBottom:"18px"}}>
+                <div style={{color:T.mu,fontSize:"9px",fontWeight:900,letterSpacing:"2.5px",textTransform:"uppercase",padding:"0 4px",marginBottom:"10px",display:"flex",alignItems:"center",gap:"8px"}}>
+                  <div style={{height:"1px",flex:1,background:"linear-gradient(90deg,transparent,"+T.bo+")"}}/>
+                  ВНЕШНИЙ ВИД
+                  <div style={{height:"1px",flex:1,background:"linear-gradient(90deg,"+T.bo+",transparent)"}}/>
+                </div>
+
+                {/* Themes grid */}
+                <div style={{background:T.pa,borderRadius:"22px",border:"1px solid "+T.bo,padding:"16px",marginBottom:"10px",boxShadow:"0 2px 20px rgba(0,0,0,0.07)"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"12px"}}>
+                    <span style={{color:T.tx,fontSize:"13px",fontWeight:700}}>🎨 Тема</span>
+                    <span style={{color:A.main,fontSize:"11px",fontWeight:700,background:A.main+"14",padding:"3px 10px",borderRadius:"8px",border:"1px solid "+A.main+"22"}}>{TH[thId]?.label||thId}</span>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>
                     {Object.values(TH).map((th,i)=>{
                       const lk=th.pr&&!prem;
                       const sel=thId===th.id;
                       return (
                         <div key={th.id}
-                          onClick={()=>{if(lk){toast(t("needPremium"));return;}setThId(th.id);try{localStorage.setItem("metik_thId",th.id);}catch(e){}if(th.pr&&prem)setBetaTheme(th.id);else toast(th.icon+" "+th.label);}}
-                          style={{position:"relative",borderRadius:"16px",border:sel?"2px solid "+A.main:"2px solid transparent",
-                            cursor:lk?"not-allowed":"pointer",
-                            opacity:lk?0.42:1,transition:"all 0.2s",
-                            boxShadow:sel?"0 0 0 3px "+A.glow+"55,0 4px 16px rgba(0,0,0,0.2)":"0 2px 8px rgba(0,0,0,0.12)",
-                            overflow:"hidden",
-                            animation:`scaleIn 0.28s cubic-bezier(.16,1,.3,1) ${i*0.04}s both`}}
-                          onMouseEnter={e=>{if(!lk&&!sel){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.2)";}}}
-                          onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=sel?"0 0 0 3px "+A.glow+"55,0 4px 16px rgba(0,0,0,0.2)":"0 2px 8px rgba(0,0,0,0.12)";}}>
-                          {/* Превью темы */}
-                          <div style={{background:th.bg,padding:"8px 8px 6px",borderRadius:"14px 14px 0 0"}}>
-                            {/* Мини-шапка */}
-                            <div style={{background:th.pa,borderRadius:"8px",padding:"5px 7px",marginBottom:"5px",display:"flex",alignItems:"center",gap:"4px",border:"1px solid "+th.bo}}>
-                              <div style={{width:"16px",height:"16px",borderRadius:"50%",background:th.bo,flexShrink:0}}/>
-                              <div style={{flex:1}}>
-                                <div style={{height:"3px",background:th.tx,borderRadius:"2px",opacity:0.5,marginBottom:"2px",width:"70%"}}/>
-                                <div style={{height:"2px",background:th.mu,borderRadius:"2px",width:"50%"}}/>
+                          onClick={()=>{if(th.locked){toast("🔒 Тема скоро появится!");return;}if(lk){toast(t("needPremium"));return;}setThId(th.id);try{localStorage.setItem("metik_thId",th.id);}catch(e){}toast((th.icon||"🎨")+" "+th.label);}}
+                          style={{position:"relative",borderRadius:"14px",border:sel?"2px solid "+A.main:"2px solid transparent",
+                            cursor:(lk||th.locked)?"not-allowed":"pointer",
+                            opacity:th.locked?0.5:lk?0.42:1,transition:"all 0.2s",
+                            boxShadow:sel?"0 0 0 3px "+A.glow+"44,0 4px 16px rgba(0,0,0,0.18)":"0 2px 8px rgba(0,0,0,0.1)",
+                            overflow:"hidden",animation:`scaleIn 0.28s cubic-bezier(.16,1,.3,1) ${i*0.035}s both`}}
+                          onMouseEnter={e=>{if(!lk&&!sel&&!th.locked){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 18px rgba(0,0,0,0.18)";}}}
+                          onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=sel?"0 0 0 3px "+A.glow+"44,0 4px 16px rgba(0,0,0,0.18)":"0 2px 8px rgba(0,0,0,0.1)";}}>
+                          {th.locked ? (
+                            <div style={{background:"#111",padding:"8px 8px 6px",borderRadius:"12px 12px 0 0",display:"flex",alignItems:"center",justifyContent:"center",height:"66px",position:"relative",overflow:"hidden"}}>
+                              <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#1a1a2e,#16213e)",filter:"blur(3px)",opacity:0.8}}/>
+                              <span style={{fontSize:"22px",position:"relative",zIndex:1}}>❓</span>
+                            </div>
+                          ) : (
+                            <div style={{background:th.bg,padding:"8px 8px 6px",borderRadius:"12px 12px 0 0"}}>
+                              <div style={{background:th.pa,borderRadius:"7px",padding:"4px 6px",marginBottom:"4px",display:"flex",alignItems:"center",gap:"4px",border:"1px solid "+th.bo}}>
+                                <div style={{width:"14px",height:"14px",borderRadius:"50%",background:th.bo,flexShrink:0}}/>
+                                <div style={{flex:1}}><div style={{height:"3px",background:th.tx,borderRadius:"2px",opacity:0.5,marginBottom:"2px",width:"70%"}}/><div style={{height:"2px",background:th.mu,borderRadius:"2px",width:"50%"}}/></div>
+                              </div>
+                              <div style={{display:"flex",flexDirection:"column",gap:"3px"}}>
+                                <div style={{alignSelf:"flex-end",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",borderRadius:"7px 7px 2px 7px",padding:"3px 5px",maxWidth:"65%"}}><div style={{height:"2px",background:"rgba(255,255,255,0.7)",borderRadius:"1px",width:"80%"}}/></div>
+                                <div style={{alignSelf:"flex-start",background:th.msg||th.ca,border:"1px solid "+th.bo,borderRadius:"7px 7px 7px 2px",padding:"3px 5px",maxWidth:"55%"}}><div style={{height:"2px",background:th.tx,borderRadius:"1px",opacity:0.4,width:"90%"}}/></div>
                               </div>
                             </div>
-                            {/* Мини-сообщения */}
-                            <div style={{display:"flex",flexDirection:"column",gap:"3px"}}>
-                              <div style={{alignSelf:"flex-end",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",borderRadius:"8px 8px 2px 8px",padding:"3px 6px",maxWidth:"65%"}}>
-                                <div style={{height:"2px",background:"rgba(255,255,255,0.7)",borderRadius:"1px",width:"80%"}}/>
-                              </div>
-                              <div style={{alignSelf:"flex-start",background:th.msg||th.ca,border:"1px solid "+th.bo,borderRadius:"8px 8px 8px 2px",padding:"3px 6px",maxWidth:"55%"}}>
-                                <div style={{height:"2px",background:th.tx,borderRadius:"1px",opacity:0.4,width:"90%"}}/>
-                              </div>
+                          )}
+                          <div style={{background:th.locked?"#111":th.pa,padding:"5px 7px 6px",display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"1px solid "+(th.locked?"rgba(255,255,255,0.06)":th.bo)}}>
+                            <span style={{color:sel?A.main:th.locked?"rgba(255,255,255,0.3)":th.tx,fontSize:"9px",fontWeight:700}}>{th.icon||"●"} {th.label}</span>
+                            {!th.locked&&<div style={{display:"flex",gap:"2px"}}>{[th.bg,th.pa,th.bo].map((c,ci)=>(<div key={ci} style={{width:"7px",height:"7px",borderRadius:"50%",background:c,border:"1px solid "+th.bo}}/>))}</div>}
+                          </div>
+                          {th.locked&&<div style={{position:"absolute",top:"5px",right:"6px",background:"rgba(0,0,0,0.6)",borderRadius:"6px",padding:"1px 5px",fontSize:"11px",color:"#fff"}}>❓</div>}
+                          {!th.locked&&lk&&<div style={{position:"absolute",top:"5px",right:"6px",background:"rgba(0,0,0,0.5)",borderRadius:"6px",padding:"1px 4px",fontSize:"9px",color:"#fff"}}>🔒 PRO</div>}
+                          {sel&&<div style={{position:"absolute",top:"5px",left:"6px",width:"7px",height:"7px",borderRadius:"50%",background:A.main,boxShadow:"0 0 7px "+A.glow}}/>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Accent + Font side by side */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"10px"}}>
+
+                  {/* Accent card */}
+                  <div style={{background:T.pa,borderRadius:"20px",border:"1px solid "+T.bo,padding:"14px",boxShadow:"0 2px 16px rgba(0,0,0,0.07)"}}>
+                    <div style={{color:T.tx,fontSize:"12px",fontWeight:700,marginBottom:"10px"}}>🌈 Акцент</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+                      {Object.entries(AC).map(([k,v],i)=>{
+                        const lk=v.pr&&!prem;
+                        const sel=acId===k;
+                        return (
+                          <div key={k}
+                            onClick={()=>{if(lk){toast(t("needPremium"));return;}setAcId(k);try{localStorage.setItem("metik_acId",k);}catch(e){}toast("🎨 "+v.label);}}
+                            style={{width:"30px",height:"30px",borderRadius:"50%",background:v.main,
+                              border:sel?"2.5px solid "+T.tx:"2.5px solid transparent",
+                              cursor:lk?"not-allowed":"pointer",opacity:lk?0.35:1,
+                              boxShadow:sel?"0 0 0 3px "+v.glow+",0 3px 10px "+v.glow:"0 2px 6px "+v.glow+"44",
+                              transition:"all 0.2s",display:"flex",alignItems:"center",justifyContent:"center"}}
+                            onMouseOver={e=>{if(!lk)e.currentTarget.style.transform="scale(1.2)";}}
+                            onMouseOut={e=>e.currentTarget.style.transform=""}>
+                            {sel&&<span style={{fontSize:"11px",color:"#fff",fontWeight:900}}>✓</span>}
+                            {lk&&!sel&&<span style={{fontSize:"8px",color:"#fff"}}>🔒</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Font card */}
+                  <div style={{background:T.pa,borderRadius:"20px",border:"1px solid "+T.bo,padding:"14px",boxShadow:"0 2px 16px rgba(0,0,0,0.07)"}}>
+                    <div style={{color:T.tx,fontSize:"12px",fontWeight:700,marginBottom:"10px"}}>✍️ Шрифт</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                      {FONTS.map((f,i)=>{
+                        const lk=f.pr&&!prem;
+                        const sel=fontId===f.id;
+                        return (
+                          <div key={f.id}
+                            onClick={()=>{if(lk){toast(t("needPremium"));return;}setFontId(f.id);try{localStorage.setItem("metik_fontId",f.id);}catch(e){}toast("✍️ "+f.label);}}
+                            style={{position:"relative",borderRadius:"10px",border:sel?"1.5px solid "+A.main:"1.5px solid "+T.bo+"88",
+                              background:sel?A.main+"14":T.ca,
+                              padding:"7px 10px",cursor:lk?"not-allowed":"pointer",opacity:lk?0.45:1,
+                              transition:"all 0.18s",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                            <span style={{color:sel?A.main:T.tx,fontSize:"12px",fontWeight:700,fontFamily:f.css}}>{f.label}</span>
+                            <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
+                              {f.pr&&!sel&&<span style={{fontSize:"8px",color:lk?"#F87171":A.main,fontWeight:700}}>{lk?"🔒":"PRO"}</span>}
+                              {sel&&<div style={{width:"6px",height:"6px",borderRadius:"50%",background:A.main,boxShadow:"0 0 5px "+A.glow}}/>}
                             </div>
                           </div>
-                          {/* Подпись */}
-                          <div style={{background:th.pa,padding:"5px 8px 6px",display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"1px solid "+th.bo}}>
-                            <div style={{display:"flex",alignItems:"center",gap:"3px"}}>
-                              <span style={{fontSize:"10px"}}>{th.icon||"●"}</span>
-                              <span style={{color:sel?A.main:th.tx,fontSize:"9px",fontWeight:700}}>{th.label}</span>
-                            </div>
-                            <div style={{display:"flex",gap:"2px"}}>
-                              {[th.bg,th.pa,th.bo].map((c,ci)=>(
-                                <div key={ci} style={{width:"8px",height:"8px",borderRadius:"50%",background:c,border:"1px solid "+th.bo}}/>
-                              ))}
-                            </div>
-                          </div>
-                          {lk&&<div style={{position:"absolute",top:"6px",right:"7px",background:"rgba(0,0,0,0.5)",borderRadius:"6px",padding:"1px 4px",fontSize:"9px",color:"#fff"}}>🔒 PRO</div>}
-                          {sel&&<div style={{position:"absolute",top:"6px",left:"7px",width:"8px",height:"8px",borderRadius:"50%",background:A.main,boxShadow:"0 0 8px "+A.glow}}/>}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-
-                  {/* Accent colour */}
-                  <div style={{color:T.mu,fontSize:"10px",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",marginBottom:"12px"}}>{t("accent")}</div>
-                  <div style={{display:"flex",gap:"10px",marginBottom:"20px",flexWrap:"wrap",paddingLeft:"2px"}}>
-                    {Object.entries(AC).map(([k,v],i)=>{
-                      const lk=v.pr&&!prem;
-                      const sel=acId===k;
-                      return (
-                        <div key={k}
-                          onClick={()=>{if(lk){toast(t("needPremium"));return;}setAcId(k);try{localStorage.setItem("metik_acId",k);}catch(e){}toast("🎨 "+v.label);}}
-                          style={{width:"34px",height:"34px",borderRadius:"50%",background:v.main,
-                            border:sel?"3px solid "+T.tx:"3px solid transparent",
-                            cursor:lk?"not-allowed":"pointer",opacity:lk?0.36:1,
-                            boxShadow:sel?"0 0 0 4px "+v.glow+",0 4px 14px "+v.glow:"0 2px 8px "+v.glow+"55",
-                            transition:"all 0.22s cubic-bezier(.16,1,.3,1)",
-                            display:"flex",alignItems:"center",justifyContent:"center",
-                            animation:`scaleIn 0.3s cubic-bezier(.16,1,.3,1) ${i*0.04}s both`}}
-                          onMouseOver={e=>{if(!lk)e.currentTarget.style.transform="scale(1.22) translateY(-2px)";}}
-                          onMouseOut={e=>e.currentTarget.style.transform=""}>
-                          {sel&&<span style={{fontSize:"13px",color:"#fff",fontWeight:900,textShadow:"0 1px 4px rgba(0,0,0,0.5)"}}>✓</span>}
-                          {lk&&!sel&&<span style={{fontSize:"9px",color:"#fff"}}>🔒</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Font */}
-                  <div style={{color:T.mu,fontSize:"10px",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",marginBottom:"10px"}}>{t("font")}</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
-                    {FONTS.map((f,i)=>{
-                      const lk=f.pr&&!prem;
-                      const sel=fontId===f.id;
-                      return (
-                        <div key={f.id}
-                          onClick={()=>{if(lk){toast(t("needPremium"));return;}setFontId(f.id);try{localStorage.setItem("metik_fontId",f.id);}catch(e){}toast("✍️ "+f.label);}}
-                          style={{position:"relative",borderRadius:"14px",border:sel?"2px solid "+A.main:"1.5px solid "+T.bo,
-                            background:sel?"linear-gradient(135deg,"+A.main+"18,"+A.dark+"0a)":T.ca,
-                            padding:"12px 14px",cursor:lk?"not-allowed":"pointer",opacity:lk?0.42:1,
-                            transition:"all 0.2s",boxShadow:sel?"0 0 0 3px "+A.glow+"33":"none",
-                            animation:`fadeUp 0.3s cubic-bezier(.16,1,.3,1) ${i*0.05}s both`}}
-                          onMouseEnter={e=>{if(!lk&&!sel)e.currentTarget.style.borderColor=A.main+"66";}}
-                          onMouseLeave={e=>{if(!sel)e.currentTarget.style.borderColor=T.bo;}}>
-                          {lk&&<div style={{position:"absolute",top:"5px",right:"8px",fontSize:"9px"}}>🔒</div>}
-                          {sel&&<div style={{position:"absolute",top:"6px",left:"8px",width:"6px",height:"6px",borderRadius:"50%",background:A.main,boxShadow:"0 0 6px "+A.glow}}/>}
-                          <div style={{color:sel?A.main:T.tx,fontSize:"12px",fontWeight:700,fontFamily:f.css}}>{f.label}</div>
-                          {f.pr&&<div style={{color:A.main,fontSize:"8px",fontWeight:700,marginTop:"2px"}}>PRO</div>}
-                        </div>
-                      );
-                    })}
-                  </div>
-
                 </div>
               </div>
 
-              {/* Settings group: Main */}
-              <div style={{marginBottom:"10px"}}>
-                <div style={{color:T.mu,fontSize:"10px",fontWeight:800,letterSpacing:"2px",textTransform:"uppercase",paddingLeft:"4px",marginBottom:"8px"}}>ОСНОВНЫЕ</div>
-                <div style={{background:T.pa,borderRadius:"20px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 16px rgba(0,0,0,0.08)"}}>
+              {/* ── ОСНОВНЫЕ ── */}
+              <div style={{marginBottom:"18px"}}>
+                <div style={{color:T.mu,fontSize:"9px",fontWeight:900,letterSpacing:"2.5px",textTransform:"uppercase",padding:"0 4px",marginBottom:"10px",display:"flex",alignItems:"center",gap:"8px"}}>
+                  <div style={{height:"1px",flex:1,background:"linear-gradient(90deg,transparent,"+T.bo+")"}}/>
+                  ОСНОВНЫЕ
+                  <div style={{height:"1px",flex:1,background:"linear-gradient(90deg,"+T.bo+",transparent)"}}/>
+                </div>
+                <div style={{background:T.pa,borderRadius:"22px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 20px rgba(0,0,0,0.07)"}}>
                   {[
-                    {icon:"🔔",label:t("notifs"),page:"notifs",badge:nOn?t("notifsOn"):t("notifsOff"),color:A.main,desc:nOn?"Включены":"Выключены"},
-                    {icon:"🔊",label:t("sound"),page:"sound",badge:soundOn?t("soundOn"):t("soundOff"),color:A.main,desc:soundOn?"Включён":"Выключен"},
-                    {icon:"🌍",label:t("lang"),page:"lang",badge:lang==="ru"?"Рус":"Eng",color:"#06B6D4",desc:lang==="ru"?"Русский":"English"},
+                    {icon:"🔔",label:t("notifs"),page:"notifs",badge:nOn?t("notifsOn"):t("notifsOff"),color:A.main,desc:nOn?"Уведомления включены":"Уведомления выключены"},
+                    {icon:"🔊",label:t("sound"),page:"sound",badge:soundOn?t("soundOn"):t("soundOff"),color:"#06B6D4",desc:soundOn?"Звук включён":"Звук выключен"},
+                    {icon:"🌍",label:t("lang"),page:"lang",badge:lang==="ru"?"Русский":"English",color:"#10B981",desc:lang==="ru"?"Язык интерфейса: Русский":"Interface language: English"},
                   ].map((it,i,arr)=>(
                     <div key={it.page} onClick={()=>setSPage(it.page)}
-                      style={{display:"flex",alignItems:"center",gap:"14px",padding:"14px 16px",
-                        borderBottom:i<arr.length-1?"1px solid "+T.bo+"55":"none",
-                        cursor:"pointer",transition:"background 0.16s",
+                      style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 16px",
+                        borderBottom:i<arr.length-1?"1px solid "+T.bo+"44":"none",
+                        cursor:"pointer",transition:"background 0.15s",
                         animation:`itemSlide 0.3s cubic-bezier(.16,1,.3,1) ${i*0.07}s both`}}
                       onMouseEnter={e=>e.currentTarget.style.background=T.caH}
                       onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                      <div style={{width:"40px",height:"40px",borderRadius:"14px",
-                        background:"linear-gradient(135deg,"+it.color+"28,"+it.color+"14)",
-                        border:"1px solid "+it.color+"30",
-                        display:"flex",alignItems:"center",justifyContent:"center",
-                        fontSize:"19px",flexShrink:0,
-                        boxShadow:"0 3px 10px "+it.color+"22"}}>{it.icon}</div>
+                      <div style={{width:"42px",height:"42px",borderRadius:"14px",background:"linear-gradient(135deg,"+it.color+"22,"+it.color+"0e)",border:"1px solid "+it.color+"28",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}}>{it.icon}</div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{color:T.tx,fontSize:"14px",fontWeight:700,marginBottom:"1px"}}>{it.label}</div>
-                        <div style={{color:T.mu,fontSize:"11px",fontWeight:500}}>{it.desc}</div>
+                        <div style={{color:T.tx,fontSize:"14px",fontWeight:700}}>{it.label}</div>
+                        <div style={{color:T.mu,fontSize:"11px",marginTop:"1px"}}>{it.desc}</div>
                       </div>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                        <span style={{background:it.color+"18",color:it.color,fontSize:"10px",fontWeight:700,padding:"3px 9px",borderRadius:"8px",border:"1px solid "+it.color+"24",whiteSpace:"nowrap"}}>{it.badge}</span>
-                        <span style={{color:T.mu,fontSize:"18px",opacity:0.4}}>›</span>
+                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                        <span style={{background:it.color+"16",color:it.color,fontSize:"10px",fontWeight:700,padding:"3px 9px",borderRadius:"8px",border:"1px solid "+it.color+"22",whiteSpace:"nowrap"}}>{it.badge}</span>
+                        <span style={{color:T.mu,fontSize:"20px",opacity:0.35}}>›</span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Settings group: Security & Info */}
-              <div style={{marginBottom:"10px"}}>
-                <div style={{color:T.mu,fontSize:"10px",fontWeight:800,letterSpacing:"2px",textTransform:"uppercase",paddingLeft:"4px",marginBottom:"8px"}}>БЕЗОПАСНОСТЬ</div>
-                <div style={{background:T.pa,borderRadius:"20px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 16px rgba(0,0,0,0.08)"}}>
+              {/* ── БЕЗОПАСНОСТЬ ── */}
+              <div style={{marginBottom:"18px"}}>
+                <div style={{color:T.mu,fontSize:"9px",fontWeight:900,letterSpacing:"2.5px",textTransform:"uppercase",padding:"0 4px",marginBottom:"10px",display:"flex",alignItems:"center",gap:"8px"}}>
+                  <div style={{height:"1px",flex:1,background:"linear-gradient(90deg,transparent,"+T.bo+")"}}/>
+                  БЕЗОПАСНОСТЬ
+                  <div style={{height:"1px",flex:1,background:"linear-gradient(90deg,"+T.bo+",transparent)"}}/>
+                </div>
+                <div style={{background:T.pa,borderRadius:"22px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 20px rgba(0,0,0,0.07)"}}>
                   {[
-                    {icon:"🛡️",label:t("security"),page:"security",badge:"v2.0",color:"#22C55E",desc:"Аккаунт защищён"},
-                    {icon:"ℹ️",label:t("about"),page:"about",badge:"v2.0",color:A.main,desc:"О приложении"},
+                    {icon:"🛡️",label:t("security"),page:"security",badge:"Защищён",color:"#22C55E",desc:"Шифрование · безопасные ключи"},
+                    {icon:"ℹ️",label:t("about"),page:"about",badge:"v2.0",color:A.main,desc:"О приложении METIKENGER"},
                   ].map((it,i,arr)=>(
                     <div key={it.page} onClick={()=>setSPage(it.page)}
-                      style={{display:"flex",alignItems:"center",gap:"14px",padding:"14px 16px",
-                        borderBottom:i<arr.length-1?"1px solid "+T.bo+"55":"none",
-                        cursor:"pointer",transition:"background 0.16s",
+                      style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 16px",
+                        borderBottom:i<arr.length-1?"1px solid "+T.bo+"44":"none",
+                        cursor:"pointer",transition:"background 0.15s",
                         animation:`itemSlide 0.3s cubic-bezier(.16,1,.3,1) ${i*0.07+0.21}s both`}}
                       onMouseEnter={e=>e.currentTarget.style.background=T.caH}
                       onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                      <div style={{width:"40px",height:"40px",borderRadius:"14px",
-                        background:"linear-gradient(135deg,"+it.color+"28,"+it.color+"14)",
-                        border:"1px solid "+it.color+"30",
-                        display:"flex",alignItems:"center",justifyContent:"center",
-                        fontSize:"19px",flexShrink:0,
-                        boxShadow:"0 3px 10px "+it.color+"22"}}>{it.icon}</div>
+                      <div style={{width:"42px",height:"42px",borderRadius:"14px",background:"linear-gradient(135deg,"+it.color+"22,"+it.color+"0e)",border:"1px solid "+it.color+"28",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}}>{it.icon}</div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{color:T.tx,fontSize:"14px",fontWeight:700,marginBottom:"1px"}}>{it.label}</div>
-                        <div style={{color:T.mu,fontSize:"11px",fontWeight:500}}>{it.desc}</div>
+                        <div style={{color:T.tx,fontSize:"14px",fontWeight:700}}>{it.label}</div>
+                        <div style={{color:T.mu,fontSize:"11px",marginTop:"1px"}}>{it.desc}</div>
                       </div>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                        <span style={{background:it.color+"18",color:it.color,fontSize:"10px",fontWeight:700,padding:"3px 9px",borderRadius:"8px",border:"1px solid "+it.color+"24",whiteSpace:"nowrap"}}>{it.badge}</span>
-                        <span style={{color:T.mu,fontSize:"18px",opacity:0.4}}>›</span>
+                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                        <span style={{background:it.color+"16",color:it.color,fontSize:"10px",fontWeight:700,padding:"3px 9px",borderRadius:"8px",border:"1px solid "+it.color+"22"}}>{it.badge}</span>
+                        <span style={{color:T.mu,fontSize:"20px",opacity:0.35}}>›</span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-
             </>}
+
             {sPage!=="main" && <>
+              {/* Back button */}
               <button onClick={()=>setSPage("main")}
                 style={{background:T.ca,border:"1px solid "+T.caB,cursor:"pointer",color:A.main,
-                  fontSize:"13px",marginBottom:"18px",padding:"10px 18px",fontWeight:700,
-                  display:"flex",alignItems:"center",gap:"8px",borderRadius:"14px",
-                  transition:"all 0.18s",boxShadow:"0 2px 8px rgba(0,0,0,0.08)"}}
-                onMouseEnter={e=>{e.currentTarget.style.background=A.main+"18";e.currentTarget.style.transform="translateX(-2px)";}}
+                  fontSize:"13px",marginBottom:"16px",marginTop:"8px",padding:"10px 16px",fontWeight:700,
+                  display:"flex",alignItems:"center",gap:"7px",borderRadius:"14px",
+                  transition:"all 0.18s",boxShadow:"0 2px 10px rgba(0,0,0,0.07)"}}
+                onMouseEnter={e=>{e.currentTarget.style.background=A.main+"14";e.currentTarget.style.transform="translateX(-2px)";}}
                 onMouseLeave={e=>{e.currentTarget.style.background=T.ca;e.currentTarget.style.transform="";}}>
                 ← {t("back")}
               </button>
+
               {sPage==="notifs" && <>
-                <div className="card" style={{marginBottom:"12px"}}>
+                <div style={{background:T.pa,borderRadius:"22px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 20px rgba(0,0,0,0.07)"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"15px 17px",borderBottom:"1px solid "+T.bo+"44"}}>
-                    <div style={{width:"38px",height:"38px",borderRadius:"12px",background:nOn?A.main+"18":"rgba(120,120,120,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",flexShrink:0}}>{nOn?"🔔":"🔕"}</div>
-                    <div style={{flex:1}}><div style={{color:T.tx,fontSize:"13px",fontWeight:700}}>{t("notifs")}</div><div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>{nOn?t("notifsOn"):t("notifsOff")}</div></div>
+                    <div style={{width:"40px",height:"40px",borderRadius:"13px",background:nOn?A.main+"18":"rgba(120,120,120,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}}>{nOn?"🔔":"🔕"}</div>
+                    <div style={{flex:1}}><div style={{color:T.tx,fontSize:"14px",fontWeight:700}}>{t("notifs")}</div><div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>{nOn?t("notifsOn"):t("notifsOff")}</div></div>
                     <div className="tt" onClick={()=>setNOn(v=>!v)} style={{background:nOn?"linear-gradient(135deg,"+A.main+","+A.dark+")":"rgba(130,130,130,0.22)"}}>
                       <div className="tt-t" style={{transform:nOn?"translateX(22px)":"translateX(0)"}}/>
                     </div>
                   </div>
-                  {/* Push уведомления */}
                   <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"15px 17px"}}>
-                    <div style={{width:"38px",height:"38px",borderRadius:"12px",background:"#F59E0B18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",flexShrink:0}}>📲</div>
+                    <div style={{width:"40px",height:"40px",borderRadius:"13px",background:"#F59E0B18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}}>📲</div>
                     <div style={{flex:1}}>
-                      <div style={{color:T.tx,fontSize:"13px",fontWeight:700}}>Push-уведомления</div>
+                      <div style={{color:T.tx,fontSize:"14px",fontWeight:700}}>Push-уведомления</div>
                       <div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>
-                        {typeof Notification==="undefined"?"Не поддерживается браузером"
+                        {typeof Notification==="undefined"?"Не поддерживается"
                           :Notification.permission==="granted"?"✅ Разрешены"
                           :Notification.permission==="denied"?"❌ Заблокированы (разреши в браузере)"
-                          :"Нажми чтобы включить"}
+                          :"Нажми Включить"}
                       </div>
                     </div>
                     {typeof Notification!=="undefined" && Notification.permission!=="granted" && Notification.permission!=="denied" && (
-                      <button onClick={()=>{
-                        Notification.requestPermission().then(p=>{
-                          if(p==="granted") toast("✅ Push-уведомления включены!");
-                          else toast("❌ Разрешение отклонено");
-                        });
-                      }} style={{background:"linear-gradient(135deg,#F59E0B,#D97706)",color:"#fff",border:"none",borderRadius:"12px",padding:"8px 14px",fontSize:"12px",fontWeight:700,cursor:"pointer",flexShrink:0,boxShadow:"0 4px 14px rgba(245,158,11,0.4)"}}>
+                      <button onClick={()=>{Notification.requestPermission().then(p=>{if(p==="granted")toast("✅ Push включены!");else toast("❌ Отклонено");});}}
+                        style={{background:"linear-gradient(135deg,#F59E0B,#D97706)",color:"#fff",border:"none",borderRadius:"14px",padding:"8px 14px",fontSize:"12px",fontWeight:700,cursor:"pointer",flexShrink:0,boxShadow:"0 4px 14px rgba(245,158,11,0.4)"}}>
                         Включить
                       </button>
                     )}
@@ -5318,82 +5321,85 @@ function App() {
                   </div>
                 </div>
               </>}
+
               {sPage==="sound" && <>
-                <div className="card" style={{marginBottom:"12px"}}>
-                  {/* Master sound toggle */}
+                <div style={{background:T.pa,borderRadius:"22px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 20px rgba(0,0,0,0.07)"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"15px 17px",borderBottom:"1px solid "+T.bo+"44"}}>
-                    <div style={{width:"38px",height:"38px",borderRadius:"12px",background:soundOn?A.main+"18":"rgba(120,120,120,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",flexShrink:0}}>{soundOn?"🔊":"🔇"}</div>
-                    <div style={{flex:1}}><div style={{color:T.tx,fontSize:"13px",fontWeight:700}}>{t("sound")}</div><div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>{soundOn?t("soundOn"):t("soundOff")}</div></div>
+                    <div style={{width:"40px",height:"40px",borderRadius:"13px",background:soundOn?A.main+"18":"rgba(120,120,120,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}}>{soundOn?"🔊":"🔇"}</div>
+                    <div style={{flex:1}}><div style={{color:T.tx,fontSize:"14px",fontWeight:700}}>{t("sound")}</div><div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>{soundOn?t("soundOn"):t("soundOff")}</div></div>
                     <div className="tt" onClick={()=>setSoundOn(v=>!v)} style={{background:soundOn?"linear-gradient(135deg,"+A.main+","+A.dark+")":"rgba(130,130,130,0.22)"}}>
                       <div className="tt-t" style={{transform:soundOn?"translateX(22px)":"translateX(0)"}}/>
                     </div>
                   </div>
-                  {/* Button click sounds */}
                   <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"15px 17px",borderBottom:"1px solid "+T.bo+"44",opacity:soundOn?1:0.4,pointerEvents:soundOn?"auto":"none"}}>
-                    <div style={{width:"38px",height:"38px",borderRadius:"12px",background:A.main+"12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",flexShrink:0}}>🖱️</div>
-                    <div style={{flex:1}}><div style={{color:T.tx,fontSize:"13px",fontWeight:700}}>{t("buttonSounds")}</div><div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>{t("buttonSoundsDesc")}</div></div>
+                    <div style={{width:"40px",height:"40px",borderRadius:"13px",background:A.main+"12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}}>🖱️</div>
+                    <div style={{flex:1}}><div style={{color:T.tx,fontSize:"14px",fontWeight:700}}>{t("buttonSounds")}</div><div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>{t("buttonSoundsDesc")}</div></div>
                     <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#22C55E",boxShadow:"0 0 8px #22C55E88"}}/>
                   </div>
-                  {/* Message sounds */}
                   <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"15px 17px",opacity:soundOn?1:0.4,pointerEvents:soundOn?"auto":"none"}}>
-                    <div style={{width:"38px",height:"38px",borderRadius:"12px",background:A.main+"12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",flexShrink:0}}>💬</div>
-                    <div style={{flex:1}}><div style={{color:T.tx,fontSize:"13px",fontWeight:700}}>{t("msgSounds")}</div><div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>{t("msgSoundsDesc")}</div></div>
+                    <div style={{width:"40px",height:"40px",borderRadius:"13px",background:A.main+"12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}}>💬</div>
+                    <div style={{flex:1}}><div style={{color:T.tx,fontSize:"14px",fontWeight:700}}>{t("msgSounds")}</div><div style={{color:T.mu,fontSize:"11px",marginTop:"2px"}}>{t("msgSoundsDesc")}</div></div>
                     <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#22C55E",boxShadow:"0 0 8px #22C55E88"}}/>
                   </div>
                 </div>
               </>}
+
               {sPage==="lang" && <>
-                <div className="sl">{t("langLabel")}</div>
-                <div className="card">
-                  {[{id:"ru",flag:"🇷🇺",label:"Русский"},{id:"en",flag:"🇬🇧",label:"English"}].map((l,i)=>(
-                    <div key={l.id} className="sr" onClick={()=>{setLang(l.id);toast("🌍 "+l.label);}} style={{borderBottom:i===0?"1px solid "+T.bo+"44":"none"}}>
-                      <span style={{fontSize:"26px"}}>{l.flag}</span>
-                      <span style={{color:T.tx,fontSize:"13px",flex:1,fontWeight:600}}>{l.label}</span>
-                      {lang===l.id&&<div style={{width:"22px",height:"22px",borderRadius:"50%",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",color:"#fff",fontWeight:900}}>✓</div>}
+                <div style={{background:T.pa,borderRadius:"22px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 20px rgba(0,0,0,0.07)"}}>
+                  {[{id:"ru",flag:"🇷🇺",label:"Русский",sub:"Русский язык интерфейса"},{id:"en",flag:"🇬🇧",label:"English",sub:"English interface language"}].map((l,i)=>(
+                    <div key={l.id} onClick={()=>{setLang(l.id);toast("🌍 "+l.label);}}
+                      style={{display:"flex",alignItems:"center",gap:"14px",padding:"15px 17px",borderBottom:i===0?"1px solid "+T.bo+"44":"none",cursor:"pointer",transition:"background 0.15s"}}
+                      onMouseEnter={e=>e.currentTarget.style.background=T.caH}
+                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                      <span style={{fontSize:"28px"}}>{l.flag}</span>
+                      <div style={{flex:1}}>
+                        <div style={{color:T.tx,fontSize:"14px",fontWeight:700}}>{l.label}</div>
+                        <div style={{color:T.mu,fontSize:"11px",marginTop:"1px"}}>{l.sub}</div>
+                      </div>
+                      {lang===l.id&&<div style={{width:"24px",height:"24px",borderRadius:"50%",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",color:"#fff",fontWeight:900,boxShadow:"0 3px 10px "+A.glow+"66"}}>✓</div>}
                     </div>
                   ))}
                 </div>
               </>}
+
               {sPage==="security" && <>
-                <div style={{background:"linear-gradient(135deg,#22C55E18,#16A34A0a)",borderRadius:"20px",padding:"20px",marginBottom:"14px",border:"1px solid #22C55E22",display:"flex",alignItems:"center",gap:"14px"}}>
-                  <div style={{width:"48px",height:"48px",borderRadius:"15px",background:"#22C55E20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",flexShrink:0,boxShadow:"0 4px 14px rgba(34,197,94,0.3)"}}>🛡️</div>
+                <div style={{background:"linear-gradient(135deg,#22C55E16,#16A34A08)",borderRadius:"22px",padding:"20px",marginBottom:"12px",border:"1px solid #22C55E22",display:"flex",alignItems:"center",gap:"14px",boxShadow:"0 4px 20px rgba(34,197,94,0.1)"}}>
+                  <div style={{width:"50px",height:"50px",borderRadius:"16px",background:"#22C55E1e",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"24px",flexShrink:0,boxShadow:"0 4px 14px rgba(34,197,94,0.25)"}}>🛡️</div>
                   <div>
-                    <div style={{color:"#22C55E",fontWeight:800,fontSize:"14px",fontFamily:"'Syne',sans-serif",marginBottom:"3px"}}>{t("secAccountProtected")}</div>
-                    <div style={{color:"rgba(34,197,94,0.65)",fontSize:"11px",fontWeight:500}}>{t("secSubtitle")}</div>
+                    <div style={{color:"#22C55E",fontWeight:800,fontSize:"15px",fontFamily:"'Syne',sans-serif",marginBottom:"3px"}}>{t("secAccountProtected")}</div>
+                    <div style={{color:"rgba(34,197,94,0.6)",fontSize:"11px",fontWeight:500}}>{t("secSubtitle")}</div>
                   </div>
                 </div>
-                <div className="card" style={{marginBottom:"12px"}}>
+                <div style={{background:T.pa,borderRadius:"22px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 20px rgba(0,0,0,0.07)"}}>
                   {t("secItems").map((it,i,arr)=>(
-                    <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"13px",padding:"13px 16px",borderBottom:i<arr.length-1?"1px solid "+T.bo+"44":"none"}}>
-                      <div style={{width:"36px",height:"36px",borderRadius:"11px",background:"#22C55E14",border:"1px solid #22C55E20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"15px",flexShrink:0,marginTop:"1px"}}>{it.icon}</div>
-                      <div style={{flex:1}}>
-                        <div style={{color:T.tx,fontSize:"13px",fontWeight:700,marginBottom:"2px"}}>{it.t}</div>
-                        <div style={{color:T.mu,fontSize:"11px",fontWeight:500,lineHeight:"1.5"}}>{it.d}</div>
-                      </div>
+                    <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"13px",padding:"14px 16px",borderBottom:i<arr.length-1?"1px solid "+T.bo+"44":"none"}}>
+                      <div style={{width:"38px",height:"38px",borderRadius:"12px",background:"#22C55E12",border:"1px solid #22C55E1e",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",flexShrink:0,marginTop:"1px"}}>{it.icon}</div>
+                      <div style={{flex:1}}><div style={{color:T.tx,fontSize:"14px",fontWeight:700,marginBottom:"2px"}}>{it.t}</div><div style={{color:T.mu,fontSize:"11px",lineHeight:"1.5"}}>{it.d}</div></div>
                     </div>
                   ))}
                 </div>
               </>}
+
               {sPage==="about" && <>
-                <div style={{background:"linear-gradient(160deg,"+A.main+"1a 0%,"+A.dark+"08 100%)",borderRadius:"22px",padding:"28px",marginBottom:"16px",border:"1px solid "+A.main+"22",textAlign:"center",position:"relative",overflow:"hidden"}}>
-                  <div style={{position:"absolute",top:"-30px",right:"-30px",width:"130px",height:"130px",borderRadius:"50%",background:A.glow,filter:"blur(55px)",opacity:0.3,pointerEvents:"none"}}/>
-                  <div style={{width:"68px",height:"68px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",borderRadius:"26px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px",margin:"0 auto 16px",boxShadow:"0 14px 36px "+A.glow,position:"relative"}}>✈️</div>
-                  <div style={{color:T.tx,fontWeight:800,fontSize:"24px",letterSpacing:"-0.8px",marginBottom:"9px",fontFamily:"'Syne',sans-serif",position:"relative"}}>METIKENGER</div>
+                <div style={{background:"linear-gradient(160deg,"+A.main+"1e,"+A.dark+"0a)",borderRadius:"24px",padding:"28px 24px",marginBottom:"14px",border:"1px solid "+A.main+"24",textAlign:"center",position:"relative",overflow:"hidden",boxShadow:"0 8px 32px "+A.glow+"22"}}>
+                  <div style={{position:"absolute",top:"-30px",right:"-30px",width:"140px",height:"140px",borderRadius:"50%",background:A.glow,filter:"blur(55px)",opacity:0.3,pointerEvents:"none"}}/>
+                  <div style={{width:"72px",height:"72px",background:"linear-gradient(135deg,"+A.main+","+A.dark+")",borderRadius:"26px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"34px",margin:"0 auto 16px",boxShadow:"0 12px 32px "+A.glow+"88",position:"relative"}}>✈️</div>
+                  <div style={{color:T.tx,fontWeight:900,fontSize:"26px",letterSpacing:"-1px",marginBottom:"8px",fontFamily:"'Syne',sans-serif"}}>METIKENGER</div>
                   <span className="tag" style={{background:A.main+"24",color:A.main,border:"1px solid "+A.main+"36"}}>{t("vSecure")}</span>
                 </div>
-                <div className="card">
+                <div style={{background:T.pa,borderRadius:"22px",border:"1px solid "+T.bo,overflow:"hidden",boxShadow:"0 2px 20px rgba(0,0,0,0.07)"}}>
                   {t("aboutItems").map((it,i,arr)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:"14px",padding:"13px 16px",borderBottom:i<arr.length-1?"1px solid "+T.bo+"44":"none"}}>
-                      <span style={{fontSize:"19px",width:"28px",textAlign:"center"}}>{it.icon}</span>
-                      <div style={{flex:1}}><div style={{color:T.mu,fontSize:"9px",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px"}}>{it.label}</div><div style={{color:T.tx,fontSize:"14px",fontWeight:600,marginTop:"2px"}}>{it.val}</div></div>
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:"14px",padding:"14px 16px",borderBottom:i<arr.length-1?"1px solid "+T.bo+"44":"none"}}>
+                      <span style={{fontSize:"20px",width:"30px",textAlign:"center"}}>{it.icon}</span>
+                      <div style={{flex:1}}><div style={{color:T.mu,fontSize:"9px",fontWeight:800,textTransform:"uppercase",letterSpacing:"1.2px"}}>{it.label}</div><div style={{color:T.tx,fontSize:"14px",fontWeight:600,marginTop:"2px"}}>{it.val}</div></div>
                     </div>
                   ))}
                 </div>
-
-
               </>}
             </>}
-          </div></div>}
+
+            </div>
+          </div>}
 
         </div>{/* end content */}
 
